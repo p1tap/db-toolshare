@@ -2,3 +2,5 @@
 
 \i C:/Users/peepz/Desktop/Project/db-toolshare/db/insert_test_data.sql
 
+For connecting to the database:
+psql -U postgres -h localhost -d toolshare

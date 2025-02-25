@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "ToolShare API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Rentals",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/api/rentals"
+      }
+    },
+    {
+      "name": "Create Rental",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tool_id\": 1,\n  \"renter_id\": 3,\n  \"start_date\": \"2023-12-01T00:00:00.000Z\",\n  \"end_date\": \"2023-12-05T00:00:00.000Z\",\n  \"total_price\": 47.97\n}"
+        },
+        "url": "http://localhost:3000/api/rentals"
+      }
+    },
+    {
+      "name": "Get Rental by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/api/rentals/1"
+      }
+    },
+    {
+      "name": "Update Rental",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"active\",\n  \"start_date\": \"2023-12-02T00:00:00.000Z\",\n  \"end_date\": \"2023-12-06T00:00:00.000Z\"\n}"
+        },
+        "url": "http://localhost:3000/api/rentals/1"
+      }
+    },
+    {
+      "name": "Cancel Rental",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "http://localhost:3000/api/rentals/1"
+      }
+    },
+    {
+      "name": "Get Rentals by User ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/api/rentals/user/1"
+      }
+    },
+    {
+      "name": "Get Rentals by Tool ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/api/rentals/tool/1"
+      }
+    }
+  ]
+} 

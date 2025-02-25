@@ -1,4 +1,4 @@
-import { sql } from "@vercel/postgres";
+import pool from "./config";
 
 // User Types
 export interface User {
@@ -20,31 +20,31 @@ export interface CreateUserParams {
 export async function createUser(params: CreateUserParams): Promise<User> {
   const { username, email, password } = params;
 
-  const result = await sql`
+  const result = await pool.query(`
     INSERT INTO users (username, email, password, status)
-    VALUES (${username}, ${email}, ${password}, 'active')
+    VALUES ($1, $2, $3, 'active')
     RETURNING *
-  `;
+  `, [username, email, password]);
 
   return result.rows[0] as User;
 }
 
 // Get user by ID
 export async function getUserById(id: number): Promise<User | null> {
-  const result = await sql`
+  const result = await pool.query(`
     SELECT * FROM users
-    WHERE id = ${id} AND status = 'active'
-  `;
+    WHERE id = $1 AND status = 'active'
+  `, [id]);
 
   return (result.rows[0] as User) || null;
 }
 
 // Get user by email
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const result = await sql`
+  const result = await pool.query(`
     SELECT * FROM users
-    WHERE email = ${email} AND status = 'active'
-  `;
+    WHERE email = $1 AND status = 'active'
+  `, [email]);
 
   return (result.rows[0] as User) || null;
 }
@@ -53,21 +53,21 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 export async function getUserByUsername(
   username: string
 ): Promise<User | null> {
-  const result = await sql`
+  const result = await pool.query(`
     SELECT * FROM users
-    WHERE username = ${username} AND status = 'active'
-  `;
+    WHERE username = $1 AND status = 'active'
+  `, [username]);
 
   return (result.rows[0] as User) || null;
 }
 
 // Get all users
 export async function getUsers(): Promise<User[]> {
-  const result = await sql`
+  const result = await pool.query(`
     SELECT * FROM users
     WHERE status = 'active'
     ORDER BY created_at DESC
-  `;
+  `);
 
   return result.rows as User[];
 }
@@ -106,18 +106,18 @@ export async function updateUser(
     RETURNING *
   `;
 
-  const result = await sql.query(query, values);
+  const result = await pool.query(query, values);
   return (result.rows[0] as User) || null;
 }
 
 // Delete user (soft delete)
 export async function deleteUser(id: number): Promise<User | null> {
-  const result = await sql`
+  const result = await pool.query(`
     UPDATE users
     SET status = 'inactive'
-    WHERE id = ${id} AND status = 'active'
+    WHERE id = $1 AND status = 'active'
     RETURNING *
-  `;
+  `, [id]);
 
   return (result.rows[0] as User) || null;
 }
@@ -147,49 +147,49 @@ export interface CreateToolParams {
 export async function createTool(params: CreateToolParams): Promise<Tool> {
   const { name, price_per_day, description, image_url, owner_id } = params;
 
-  const result = await sql`
+  const result = await pool.query(`
     INSERT INTO tools (name, price_per_day, description, image_url, owner_id, status)
-    VALUES (${name}, ${price_per_day}, ${description}, ${image_url}, ${owner_id}, 'active')
+    VALUES ($1, $2, $3, $4, $5, 'active')
     RETURNING *
-  `;
+  `, [name, price_per_day, description, image_url, owner_id]);
 
   return result.rows[0] as Tool;
 }
 
 // Get all tools with owner details
 export async function getTools(): Promise<Tool[]> {
-  const result = await sql`
+  const result = await pool.query(`
     SELECT t.*, u.username as owner_name
     FROM tools t
     JOIN users u ON t.owner_id = u.id
     WHERE t.status = 'active'
     ORDER BY t.created_at DESC
-  `;
+  `);
 
   return result.rows as Tool[];
 }
 
 // Get tool by ID with owner details
 export async function getToolById(id: number): Promise<Tool | null> {
-  const result = await sql`
+  const result = await pool.query(`
     SELECT t.*, u.username as owner_name
     FROM tools t
     JOIN users u ON t.owner_id = u.id
-    WHERE t.id = ${id} AND t.status = 'active'
-  `;
+    WHERE t.id = $1 AND t.status = 'active'
+  `, [id]);
 
   return (result.rows[0] as Tool) || null;
 }
 
 // Get tools by owner ID
 export async function getToolsByOwnerId(ownerId: number): Promise<Tool[]> {
-  const result = await sql`
+  const result = await pool.query(`
     SELECT t.*, u.username as owner_name
     FROM tools t
     JOIN users u ON t.owner_id = u.id
-    WHERE t.owner_id = ${ownerId} AND t.status = 'active'
+    WHERE t.owner_id = $1 AND t.status = 'active'
     ORDER BY t.created_at DESC
-  `;
+  `, [ownerId]);
 
   return result.rows as Tool[];
 }
@@ -233,18 +233,18 @@ export async function updateTool(
     RETURNING *
   `;
 
-  const result = await sql.query(query, values);
+  const result = await pool.query(query, values);
   return (result.rows[0] as Tool) || null;
 }
 
 // Delete tool (soft delete)
 export async function deleteTool(id: number): Promise<Tool | null> {
-  const result = await sql`
+  const result = await pool.query(`
     UPDATE tools
     SET status = 'inactive'
-    WHERE id = ${id} AND status = 'active'
+    WHERE id = $1 AND status = 'active'
     RETURNING *
-  `;
+  `, [id]);
 
   return (result.rows[0] as Tool) || null;
 }
@@ -286,21 +286,21 @@ export async function createRental(
 ): Promise<Rental> {
   const { tool_id, renter_id, start_date, end_date, total_price } = params;
 
-  const result = await sql`
+  const result = await pool.query(`
     INSERT INTO rentals (
       tool_id, renter_id, start_date, end_date, status, total_price
     ) VALUES (
-      ${tool_id}, ${renter_id}, ${start_date.toISOString()}, ${end_date.toISOString()}, 'pending', ${total_price}
+      $1, $2, $3, $4, 'pending', $5
     )
     RETURNING *
-  `;
+  `, [tool_id, renter_id, start_date.toISOString(), end_date.toISOString(), total_price]);
 
   return result.rows[0] as Rental;
 }
 
 // Get all rentals with tool and renter details
 export async function getRentalsWithDetails(): Promise<Rental[]> {
-  const rentals = await sql`
+  const rentals = await pool.query(`
     SELECT 
       r.*,
       t.name as tool_name,
@@ -309,14 +309,14 @@ export async function getRentalsWithDetails(): Promise<Rental[]> {
     JOIN tools t ON r.tool_id = t.id
     JOIN users u ON r.renter_id = u.id
     ORDER BY r.created_at DESC
-  `;
+  `);
 
   return rentals.rows as Rental[];
 }
 
 // Get rental by ID with tool and renter details
 export async function getRentalById(id: number): Promise<Rental | null> {
-  const results = await sql`
+  const results = await pool.query(`
     SELECT 
       r.*,
       t.name as tool_name,
@@ -324,15 +324,15 @@ export async function getRentalById(id: number): Promise<Rental | null> {
     FROM rentals r
     JOIN tools t ON r.tool_id = t.id
     JOIN users u ON r.renter_id = u.id
-    WHERE r.id = ${id}
-  `;
+    WHERE r.id = $1
+  `, [id]);
 
   return (results.rows[0] as Rental) || null;
 }
 
 // Get rentals by user ID (as renter)
 export async function getRentalsByUserId(userId: number): Promise<Rental[]> {
-  const rentals = await sql`
+  const rentals = await pool.query(`
     SELECT 
       r.*,
       t.name as tool_name,
@@ -340,16 +340,16 @@ export async function getRentalsByUserId(userId: number): Promise<Rental[]> {
     FROM rentals r
     JOIN tools t ON r.tool_id = t.id
     JOIN users u ON r.renter_id = u.id
-    WHERE r.renter_id = ${userId}
+    WHERE r.renter_id = $1
     ORDER BY r.created_at DESC
-  `;
+  `, [userId]);
 
   return rentals.rows as Rental[];
 }
 
 // Get rentals by tool ID
 export async function getRentalsByToolId(toolId: number): Promise<Rental[]> {
-  const rentals = await sql`
+  const rentals = await pool.query(`
     SELECT 
       r.*,
       t.name as tool_name,
@@ -357,9 +357,9 @@ export async function getRentalsByToolId(toolId: number): Promise<Rental[]> {
     FROM rentals r
     JOIN tools t ON r.tool_id = t.id
     JOIN users u ON r.renter_id = u.id
-    WHERE r.tool_id = ${toolId}
+    WHERE r.tool_id = $1
     ORDER BY r.created_at DESC
-  `;
+  `, [toolId]);
 
   return rentals.rows as Rental[];
 }
@@ -403,18 +403,18 @@ export async function updateRental(
     RETURNING *
   `;
 
-  const result = await sql.query(query, values);
+  const result = await pool.query(query, values);
   return (result.rows[0] as Rental) || null;
 }
 
 // Cancel rental
 export async function cancelRental(id: number): Promise<Rental | null> {
-  const result = await sql`
+  const result = await pool.query(`
     UPDATE rentals
     SET status = 'cancelled'
-    WHERE id = ${id}
+    WHERE id = $1
     RETURNING *
-  `;
+  `, [id]);
 
   return (result.rows[0] as Rental) || null;
 }
