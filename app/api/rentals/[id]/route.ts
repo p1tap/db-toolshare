@@ -31,8 +31,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = validateRentalId(params);
-    const rental = await getRentalById(id);
+    const { id } = await params;
+    const rental = await getRentalById(parseInt(id));
 
     if (!rental) {
       return NextResponse.json({ error: "Rental not found" }, { status: 404 });
@@ -57,7 +57,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const rentalId = parseInt(id);
     
     if (isNaN(rentalId)) {
@@ -78,22 +78,55 @@ export async function PUT(
       );
     }
 
-    // Update rental status
-    const result = await pool.query(`
-      UPDATE rentals
-      SET status = $1
-      WHERE id = $2
-      RETURNING *
-    `, [status, rentalId]);
+    // Start a transaction to update both rentals and orders
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    if (result.rowCount === 0) {
-      return NextResponse.json(
-        { error: "Rental not found" },
-        { status: 404 }
-      );
+      // Update rental status
+      const rentalResult = await client.query(`
+        UPDATE rentals
+        SET status = $1
+        WHERE id = $2
+        RETURNING *
+      `, [status, rentalId]);
+
+      if (rentalResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: "Rental not found" },
+          { status: 404 }
+        );
+      }
+
+      // Find and update the corresponding order
+      const orderResult = await client.query(`
+        UPDATE orders
+        SET status = $1
+        WHERE tool_id = (
+          SELECT tool_id FROM rentals WHERE id = $2
+        )
+        AND user_id = (
+          SELECT renter_id FROM rentals WHERE id = $2
+        )
+        AND created_at = (
+          SELECT created_at FROM rentals WHERE id = $2
+        )
+        RETURNING *
+      `, [status, rentalId]);
+
+      await client.query('COMMIT');
+
+      return NextResponse.json({
+        rental: rentalResult.rows[0],
+        order: orderResult.rows[0]
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
-
-    return NextResponse.json(result.rows[0]);
   } catch (error) {
     console.error("Error updating rental:", error);
     return NextResponse.json(
@@ -108,16 +141,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = validateRentalId(params);
+    const { id } = await params;
+    const rentalId = parseInt(id);
 
-    // Check if rental exists
-    const existingRental = await getRentalById(id);
-    if (!existingRental) {
-      return NextResponse.json({ error: "Rental not found" }, { status: 404 });
+    if (isNaN(rentalId)) {
+      return NextResponse.json({ error: "Invalid rental ID" }, { status: 400 });
     }
 
     // Cancel rental
-    const cancelledRental = await cancelRental(id);
+    const cancelledRental = await cancelRental(rentalId);
     if (!cancelledRental) {
       return NextResponse.json(
         { error: "Failed to cancel rental" },
@@ -127,10 +159,6 @@ export async function DELETE(
 
     return NextResponse.json(cancelledRental);
   } catch (error) {
-    if (error instanceof Error && error.message === "Invalid rental ID") {
-      return NextResponse.json({ error: "Invalid rental ID" }, { status: 400 });
-    }
-
     console.error("Failed to cancel rental:", error);
     return NextResponse.json(
       { error: "Failed to cancel rental" },

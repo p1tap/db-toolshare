@@ -26,42 +26,48 @@ export default function StatusPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const userId = getCurrentUserId();
-        if (!userId) {
-          router.push('/login');
-          return;
-        }
-
-        const response = await fetch(`/api/renter/orders?userId=${userId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch orders');
-        }
-
-        const data = await response.json();
-        setOrders(data);
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError('Failed to load orders');
-      } finally {
-        setLoading(false);
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const userId = getCurrentUserId();
+      if (!userId) {
+        router.push('/login');
+        return;
       }
-    };
 
+      const response = await fetch(`/api/renter/orders?userId=${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+
+      const data = await response.json();
+      setOrders(data);
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      setError('Failed to load orders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
-  }, [router]);
+  }, []);
 
   const handleConfirm = async (orderId: string) => {
     try {
-      const rentalId = parseInt(orderId.replace('ORD-', ''));
+      setError('');
       const order = orders.find(o => o.id === orderId);
-      
-      if (!order) return;
+      if (!order) {
+        setError('Order not found');
+        return;
+      }
 
-      // Determine the new status based on current status
-      const newStatus = order.status === 'Waiting to be picked' ? 'active' : 'completed';
+      // Get the rental ID from the order ID (remove 'ORD-' prefix)
+      const rentalId = orderId.replace('ORD-', '');
+      
+      // Determine new status based on current status
+      const newStatus = order.status === 'Waiting for user pickup' ? 'active' : 'completed';
 
       const response = await fetch(`/api/rentals/${rentalId}`, {
         method: 'PUT',
@@ -78,48 +84,37 @@ export default function StatusPage() {
       }
 
       // Update local state
-      setOrders(prevOrders =>
-        prevOrders.map(order => {
-          if (order.id === orderId) {
-            if (order.status === 'Waiting to be picked') {
-              setSuccessMessage(`${order.toolName} pickup confirmed! Order is now active.`);
-              return {
-                ...order,
-                status: 'In progress',
-                action: 'return tool',
-                message: 'return tool to complete order',
-              };
-            } else if (order.status === 'In progress') {
-              setSuccessMessage(`${order.toolName} return confirmed! Order completed.`);
-              return {
-                ...order,
-                status: 'Completed',
-                action: undefined,
-                message: 'order completed',
-              };
-            }
-          }
-          return order;
-        })
-      );
-
-      // Refresh the orders list
-      const userId = getCurrentUserId();
-      if (userId) {
-        const refreshResponse = await fetch(`/api/renter/orders?userId=${userId}`);
-        if (refreshResponse.ok) {
-          const refreshedOrders = await refreshResponse.json();
-          setOrders(refreshedOrders);
+      const updatedOrders = orders.map(o => {
+        if (o.id === orderId) {
+          return {
+            ...o,
+            status: newStatus === 'active' ? 'In progress' : 'Completed',
+            action: newStatus === 'active' ? 'confirm return' : undefined,
+            message: newStatus === 'active' ? 
+              'click confirm return when you receive the tool back' : 
+              'order completed'
+          };
         }
-      }
+        return o;
+      });
 
+      setOrders(updatedOrders);
+      setSuccessMessage(
+        newStatus === 'active' ? 
+          'Pickup confirmed! The order is now active.' : 
+          'Return confirmed! The order is now completed.'
+      );
+      
       // Clear success message after 3 seconds
       setTimeout(() => {
-        setSuccessMessage(null);
+        setSuccessMessage('');
       }, 3000);
-    } catch (err) {
-      console.error('Error updating order:', err);
-      setError('Failed to update order');
+
+      // Refresh orders
+      await fetchOrders();
+    } catch (error) {
+      console.error('Error confirming order:', error);
+      setError('Failed to update order status');
     }
   };
 

@@ -41,8 +41,8 @@ export async function GET(request: Request) {
       action: getActionForStatus(rental.status),
       message: getMessageForStatus(rental.status),
       price: Number(rental.total_price) || 0, // Ensure price is a number
-      renterName: rental.renter_name || 'Unknown Renter',
-      location: "To be implemented", // You might want to add this to your schema
+      renterName: rental.renter_name || 'Unknown User',
+      location: "123 Tool Street, Tool City, TC 12345", // Default mock location
     }));
 
     return NextResponse.json(orders);
@@ -79,7 +79,7 @@ function formatDate(date: Date): string {
 function getStatusDisplay(status: string): string {
   switch (status) {
     case 'pending':
-      return 'Waiting to be picked';
+      return 'Waiting for user pickup';
     case 'active':
       return 'In progress';
     case 'completed':
@@ -94,9 +94,9 @@ function getStatusDisplay(status: string): string {
 function getActionForStatus(status: string): string | undefined {
   switch (status) {
     case 'pending':
-      return 'confirm pickup';
+      return 'confirm pickup'; // Owner confirms when user picks up
     case 'active':
-      return 'return tool';
+      return 'confirm return'; // Owner confirms when they receive the tool back
     default:
       return undefined;
   }
@@ -105,9 +105,9 @@ function getActionForStatus(status: string): string | undefined {
 function getMessageForStatus(status: string): string {
   switch (status) {
     case 'pending':
-      return 'confirm pickup to start';
+      return 'waiting for user to pick up';
     case 'active':
-      return 'return tool to complete order';
+      return 'click confirm return when you receive the tool back';
     case 'completed':
       return 'order completed';
     case 'cancelled':
