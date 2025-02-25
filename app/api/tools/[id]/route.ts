@@ -14,27 +14,32 @@ function validateToolId(id: string | string[]) {
   return { toolId };
 }
 
-export async function GET(_request: NextRequest, { params }: Params) {
-  const { id } = await params;
-  const result = validateToolId(id);
-  if ("error" in result) {
-    return NextResponse.json(
-      { error: result.error },
-      { status: result.status }
-    );
-  }
-
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const tool = await getToolById(result.toolId);
+    const toolId = parseInt(params.id);
+    if (isNaN(toolId)) {
+      return NextResponse.json(
+        { error: 'Invalid tool ID' },
+        { status: 400 }
+      );
+    }
+
+    const tool = await getToolById(toolId);
     if (!tool) {
-      return NextResponse.json({ error: "Tool not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Tool not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(tool);
   } catch (error) {
-    console.error("Error fetching tool:", error);
+    console.error('Error fetching tool:', error);
     return NextResponse.json(
-      { error: "Failed to fetch tool" },
+      { error: 'Failed to fetch tool' },
       { status: 500 }
     );
   }
