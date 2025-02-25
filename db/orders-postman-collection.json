@@ -1,0 +1,74 @@
+{
+  "info": {
+    "name": "ToolShare Orders API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Orders",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/api/orders"
+      }
+    },
+    {
+      "name": "Create Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": 1,\n  \"tool_id\": 11,\n  \"start_date\": \"2025-03-25T12:00:00.000Z\",\n  \"end_date\": \"2025-03-28T12:00:00.000Z\"\n}"
+        },
+        "url": "http://localhost:3000/api/orders"
+      }
+    },
+    {
+      "name": "Get Order by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/api/orders/1"
+      }
+    },
+    {
+      "name": "Update Order",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"active\",\n  \"start_date\": \"2025-03-26T12:00:00.000Z\",\n  \"end_date\": \"2025-03-29T12:00:00.000Z\"\n}"
+        },
+        "url": "http://localhost:3000/api/orders/1"
+      }
+    },
+    {
+      "name": "Cancel Order",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "http://localhost:3000/api/orders/1"
+      }
+    },
+    {
+      "name": "Get Orders by User ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/api/orders/user/1"
+      }
+    }
+  ]
+} 

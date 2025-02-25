@@ -4,3 +4,5 @@
 
 For connecting to the database:
 psql -U postgres -h localhost -d toolshare
+
+psql -U postgres -h localhost -d toolshare -f db/create-test-orders.sql
