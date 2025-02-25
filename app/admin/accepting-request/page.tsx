@@ -9,7 +9,7 @@ interface SupportRequest {
   message: string;
   status: "pending" | "finished";
   created_at: string;
-  username: string;
+  name: string;
   email: string;
   phone: string;
   address: string;
@@ -178,7 +178,7 @@ export default function AcceptingRequestPage() {
                       </label>
                       <input
                         type="text"
-                        value={request.username}
+                        value={request.name || ''}
                         readOnly
                         className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900"
                       />
@@ -189,7 +189,7 @@ export default function AcceptingRequestPage() {
                       </label>
                       <input
                         type="email"
-                        value={request.email}
+                        value={request.email || ''}
                         readOnly
                         className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900"
                       />
@@ -200,7 +200,7 @@ export default function AcceptingRequestPage() {
                       </label>
                       <input
                         type="tel"
-                        value={request.phone}
+                        value={request.phone || ''}
                         readOnly
                         className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900"
                       />
@@ -211,7 +211,7 @@ export default function AcceptingRequestPage() {
                       </label>
                       <input
                         type="text"
-                        value={request.address}
+                        value={request.address || ''}
                         readOnly
                         className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900"
                       />
@@ -222,7 +222,7 @@ export default function AcceptingRequestPage() {
                       Message
                     </label>
                     <textarea
-                      value={request.message}
+                      value={request.message || ''}
                       readOnly
                       rows={4}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 resize-none"

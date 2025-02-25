@@ -7,7 +7,8 @@ export async function PUT(
 ) {
   try {
     const { status } = await request.json();
-    const id = parseInt(params.id);
+    const { id: paramId } = await params;
+    const id = parseInt(paramId);
 
     if (!id || isNaN(id)) {
       return NextResponse.json(

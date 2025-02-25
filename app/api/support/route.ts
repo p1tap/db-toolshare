@@ -10,12 +10,11 @@ export async function GET() {
         sr.message,
         sr.status,
         sr.created_at,
-        u.username,
-        u.email,
-        u.phone,
-        u.address
+        sr.name,
+        sr.email,
+        sr.phone,
+        sr.address
       FROM support_requests sr
-      LEFT JOIN users u ON sr.user_id = u.id
       ORDER BY sr.created_at DESC
     `;
 
