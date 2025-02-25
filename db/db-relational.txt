@@ -1,0 +1,77 @@
+Entities and their Attributes:
+
+User
+	History ID
+	Password
+	UserID
+	Name
+	Address
+	Email
+	Phone
+	date of birth
+
+Admin
+	User Name
+	DashboardAccess
+	AdminID
+	VerificationTask
+
+Tool
+	Renter ID
+	Type
+	CostPerDay
+	OwnerDay
+	ToolID
+	Name
+
+Renter
+	RenterID
+	Name
+	Address
+	Tool Listing (appears to be dotted, suggesting derived/optional)
+	Balance (appears to be dotted, suggesting derived/optional)
+	Password
+
+
+Order
+	OrderID
+	UserID
+	Tool ID
+	Status
+	StartDate
+	Enddate
+	Start Date (appears to be redundant with StartDate)
+	End date (appears to be redundant with Enddate)
+
+
+Payment
+	Tool ID
+	Amount (appears to be dotted, suggesting derived/optional)
+	UserID
+	PaymentID
+	PaymentMethod
+	Date
+
+History
+	History ID
+	UserID
+	Order ID
+	Detail
+
+Rental
+	UserID
+	ToolID
+	RentalID
+	Status
+	Start Date
+	End date
+
+Relationships:
+	User "Has" History (1:1)
+	User "manages" Admin
+	User "Place" Order (1:M)
+	Order "Has" Payment
+	User "rents" Tool
+	Tool "Is rented in" Rental
+	Admin "Verifies" Tool
+	Renter "Owns" Tool

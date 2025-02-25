@@ -1,0 +1,4 @@
+\i C:/Users/peepz/Desktop/Project/db-toolshare/database_setup.sql
+
+\i C:/Users/peepz/Desktop/Project/db-toolshare/db/insert_test_data.sql
+

@@ -1,0 +1,38 @@
+Tables Needed:
+
+1. users
+   - id (PK)
+   - username
+   - email
+   - password (we're not gonna hash it or anything.)
+   - role (user/renter/admin)
+   - created_at
+
+2. tools
+   - id (PK)
+   - name
+   - price_per_day
+   - description
+   - image_url
+   - owner_id (FK -> users.id)
+   - status (active/inactive)
+   - created_at
+
+3. rentals
+   - id (PK)
+   - tool_id (FK -> tools.id)
+   - renter_id (FK -> users.id)
+   - start_date
+   - end_date
+   - status (pending/active/completed)
+   - pickup_location
+   - total_price
+   - created_at
+
+4. support_requests
+   - id (PK)
+   - user_id (FK -> users.id)
+   - type (technical/application/other)
+   - message
+   - status (pending/finished)
+   - created_at
