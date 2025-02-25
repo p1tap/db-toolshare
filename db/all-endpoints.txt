@@ -1,0 +1,46 @@
+# ToolShare API Endpoints
+
+## User Endpoints
+- GET /api/users - Get all users
+- POST /api/users - Create a new user
+- GET /api/users/:id - Get a specific user
+- PUT /api/users/:id - Update a user
+- DELETE /api/users/:id - Delete a user (soft delete)
+
+## Tool Endpoints
+- GET /api/tools - Get all tools
+- POST /api/tools - Create a new tool
+- GET /api/tools/:id - Get a specific tool
+- PUT /api/tools/:id - Update a tool
+- DELETE /api/tools/:id - Delete a tool (soft delete)
+- GET /api/tools/owner/:ownerId - Get tools owned by a specific user (to be implemented)
+
+## Rental Endpoints
+- GET /api/rentals - Get all rentals
+- POST /api/rentals - Create a new rental
+- GET /api/rentals/:id - Get a specific rental
+- PUT /api/rentals/:id - Update a rental
+- DELETE /api/rentals/:id - Cancel a rental
+- GET /api/rentals/user/:userId - Get rentals by user ID
+- GET /api/rentals/tool/:toolId - Get rentals by tool ID
+
+## Order Endpoints (to be implemented)
+- GET /api/orders - Get all orders
+- POST /api/orders - Create a new order
+- GET /api/orders/:id - Get a specific order
+- PUT /api/orders/:id - Update an order status
+- GET /api/orders/user/:userId - Get orders by a specific user
+
+## Payment Endpoints (to be implemented)
+- GET /api/payments - Get all payments
+- POST /api/payments - Create a new payment
+- GET /api/payments/:id - Get a specific payment
+- GET /api/payments/order/:orderId - Get payment for a specific order
+- GET /api/payments/user/:userId - Get payments by a specific user
+
+## History Endpoints (to be implemented)
+- GET /api/history - Get all history entries
+- POST /api/history - Create a new history entry
+- GET /api/history/:id - Get a specific history entry
+- GET /api/history/user/:userId - Get history for a specific user
+- GET /api/history/order/:orderId - Get history for a specific order 
