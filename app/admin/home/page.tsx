@@ -1,184 +1,180 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
-interface TopCategory {
-  name: string;
-  views: string;
-  rents: string;
+interface DashboardStats {
+  totalTools: number;
+  activeTools: number;
+  highestPrice: number;
+  averagePrice: number;
+  topCategories: { name: string; count: number }[];
+  recentTools: {
+    id: number;
+    name: string;
+    price_per_day: number;
+    owner_name: string;
+    created_at: string;
+  }[];
 }
 
-interface TopRenter {
-  name: string;
-  category: string;
-  price: string;
-  time: string;
-  profit: string;
-  avatar: string;
-}
+export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default function AdminHomePage() {
-  // Mock data for top categories
-  const topCategories: TopCategory[] = [
-    { name: "Screwdrivers", views: "4.2K", rents: "3.9K" },
-    { name: "Crowbar", views: "1.9K", rents: "509" },
-    { name: "Hammers", views: "1.5K", rents: "986" },
-    { name: "Saws", views: "974", rents: "639" },
-    { name: "Sledgehammer", views: "179", rents: "57" },
-  ];
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
 
-  // Mock data for top renters
-  const topRenters: TopRenter[] = [
-    {
-      name: "Tom Kuki",
-      category: "Screwdrivers",
-      price: "$5",
-      time: "65",
-      profit: "$45",
-      avatar: "",
-    },
-    {
-      name: "Alex Arai",
-      category: "Hammers",
-      price: "$6",
-      time: "59",
-      profit: "$125",
-      avatar: "",
-    },
-    {
-      name: "Tim Tub",
-      category: "Crowbar",
-      price: "$4",
-      time: "55",
-      profit: "$247",
-      avatar: "",
-    },
-    {
-      name: "Jim Jum",
-      category: "Saws",
-      price: "$9",
-      time: "48",
-      profit: "$103",
-      avatar: "",
-    },
-  ];
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch('/api/admin/dashboard');
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard stats');
+      }
+      const data = await response.json();
+      setStats(data);
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+      setError('Failed to load dashboard statistics');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Mock data for visitor analytics
-  const visitorData = [
-    250, 200, 300, 120, 220, 60, 160, 230, 120, 200, 280, 80, 150, 230, 180,
-    350, 280, 150, 230, 180, 250, 130, 260, 150, 100, 240, 200, 70, 200, 150,
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) return null;
 
   return (
-    <div className="p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Dashboard</h1>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
-        {/* Visitors Analytics */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Visitors Analytics
-            </h2>
-            <div className="text-sm text-gray-500">
-              Dec 29, 2023 - Jan 4, 2024
-            </div>
-          </div>
-          <div className="h-64 w-full">
-            {/* Chart */}
-            <div className="relative h-full">
-              <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between h-48">
-                {visitorData.map((value, index) => (
-                  <div
-                    key={index}
-                    className="w-6 bg-indigo-500 rounded-t"
-                    style={{ height: `${(value / 350) * 100}%` }}
-                  ></div>
-                ))}
-              </div>
-              {/* X-axis */}
-              <div className="absolute bottom-0 left-0 right-0 flex justify-between mt-2 text-sm text-gray-500">
-                {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
-                  <div
-                    key={day}
-                    className="text-center"
-                    style={{ width: "24px" }}
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white p-6 rounded-lg shadow-sm"
+        >
+          <h3 className="text-sm font-medium text-gray-500">Total Tools</h3>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalTools}</p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Top Category */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Top Category
-              </h2>
-              <button className="text-gray-400">•••</button>
-            </div>
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 text-sm text-gray-500 pb-2">
-                <div></div>
-                <div className="text-center">View</div>
-                <div className="text-center">Rent</div>
-              </div>
-              {topCategories.map((category, index) => (
-                <div key={index} className="grid grid-cols-3 items-center">
-                  <div className="text-gray-900 font-medium">
-                    {category.name}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white p-6 rounded-lg shadow-sm"
+        >
+          <h3 className="text-sm font-medium text-gray-500">Active Tools</h3>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{stats.activeTools}</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white p-6 rounded-lg shadow-sm"
+        >
+          <h3 className="text-sm font-medium text-gray-500">Highest Price/Day</h3>
+          <p className="text-3xl font-bold text-gray-900 mt-2">
+            ${stats.highestPrice}
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white p-6 rounded-lg shadow-sm"
+        >
+          <h3 className="text-sm font-medium text-gray-500">Average Price/Day</h3>
+          <p className="text-3xl font-bold text-gray-900 mt-2">
+            ${stats.averagePrice.toFixed(2)}
+          </p>
+        </motion.div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Categories */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white p-6 rounded-lg shadow-sm"
+        >
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Categories</h3>
+          <div className="space-y-4">
+            {stats.topCategories.map((category, index) => (
+              <div key={category.name} className="flex items-center">
+                <div className="flex-1">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-600">
+                      {category.name}
+                    </span>
+                    <span className="text-sm text-gray-500">{category.count}</span>
                   </div>
-                  <div className="text-center text-gray-600">
-                    {category.views}
-                  </div>
-                  <div className="text-center text-gray-600">
-                    {category.rents}
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{
+                        width: `${(category.count / stats.totalTools) * 100}%`,
+                      }}
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
+        </motion.div>
 
-          {/* Top Renter */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              Top Renter
-            </h2>
-            <table className="w-full">
+        {/* Recent Tools */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white p-6 rounded-lg shadow-sm"
+        >
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Tools</h3>
+          <div className="overflow-hidden">
+            <table className="min-w-full">
               <thead>
-                <tr className="text-sm text-gray-500">
-                  <th className="text-left font-medium pb-4">Name</th>
-                  <th className="text-left font-medium pb-4">Category</th>
-                  <th className="text-left font-medium pb-4">Price</th>
-                  <th className="text-left font-medium pb-4">Time</th>
-                  <th className="text-left font-medium pb-4">Profit</th>
+                <tr>
+                  <th className="text-left text-sm font-medium text-gray-500 pb-3">Name</th>
+                  <th className="text-left text-sm font-medium text-gray-500 pb-3">Price/Day</th>
+                  <th className="text-left text-sm font-medium text-gray-500 pb-3">Owner</th>
                 </tr>
               </thead>
               <tbody>
-                {topRenters.map((renter, index) => (
-                  <tr key={index} className="text-sm">
-                    <td className="py-3">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 mr-3"></div>
-                        <span className="font-medium text-gray-900">
-                          {renter.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 text-gray-600">{renter.category}</td>
-                    <td className="py-3 text-gray-600">{renter.price}</td>
-                    <td className="py-3 text-gray-600">{renter.time}</td>
-                    <td className="py-3 text-green-500">{renter.profit}</td>
+                {stats.recentTools.map((tool) => (
+                  <tr key={tool.id} className="border-t border-gray-100">
+                    <td className="py-3 text-sm text-gray-900">{tool.name}</td>
+                    <td className="py-3 text-sm text-gray-900">${tool.price_per_day}</td>
+                    <td className="py-3 text-sm text-gray-500">{tool.owner_name}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
