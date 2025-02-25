@@ -1,19 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ListingItem {
   id: number;
   name: string;
-  price: number;
-  image: string;
-  renterId: string;
-  renterName: string;
-  createdAt: string;
-  pickupLocation: string;
-  pickupTime: string;
-  details: string;
+  price_per_day: number;
+  image_url: string;
+  owner_id: number;
+  owner_name: string;
+  description: string;
+  status: string;
+  created_at: string;
 }
 
 interface ConfirmationDialog {
@@ -23,84 +22,36 @@ interface ConfirmationDialog {
 }
 
 export default function ApprovePage() {
-  // Mock data for pending approvals
-  const [pendingItems, setPendingItems] = useState<ListingItem[]>([
-    {
-      id: 1,
-      name: "Professional Hammer",
-      price: 5.99,
-      image: "/images/tools/hammer.jpg",
-      renterId: "R123456",
-      renterName: "Tom Kuki",
-      createdAt: "2024-02-04 14:30",
-      pickupLocation: "123 Main St, Downtown",
-      pickupTime: "9:00 AM - 5:00 PM",
-      details:
-        "Professional grade hammer with ergonomic grip. Perfect for both light and heavy-duty work.",
-    },
-    {
-      id: 2,
-      name: "Power Drill",
-      price: 15.99,
-      image: "/images/tools/powerdrill.jpg",
-      renterId: "R789012",
-      renterName: "Alex Arai",
-      createdAt: "2024-02-04 15:45",
-      pickupLocation: "456 Oak Ave, Westside",
-      pickupTime: "10:00 AM - 6:00 PM",
-      details:
-        "Cordless power drill with variable speed control. Includes battery and charger.",
-    },
-    {
-      id: 3,
-      name: "Wrench Set",
-      price: 12.99,
-      image: "/images/tools/wrench-set.jpg",
-      renterId: "R345678",
-      renterName: "Tim Tub",
-      createdAt: "2024-02-04 16:20",
-      pickupLocation: "789 Pine Rd, Eastside",
-      pickupTime: "8:00 AM - 4:00 PM",
-      details:
-        "Complete set of professional wrenches in various sizes. Includes carrying case.",
-    },
-    {
-      id: 4,
-      name: "Heat Gun",
-      price: 18.99,
-      image: "/images/tools/Heat-gun.jpg",
-      renterId: "R901234",
-      renterName: "Jim Jum",
-      createdAt: "2024-02-04 17:10",
-      pickupLocation: "321 Elm St, Northside",
-      pickupTime: "11:00 AM - 7:00 PM",
-      details:
-        "Industrial heat gun with temperature control. Perfect for paint removal and shrink wrapping.",
-    },
-    {
-      id: 5,
-      name: "Wire Cutter",
-      price: 7.99,
-      image: "/images/tools/wire-cutter.jpg",
-      renterId: "R567890",
-      renterName: "Sam Smith",
-      createdAt: "2024-02-04 18:00",
-      pickupLocation: "654 Maple Dr, Southside",
-      pickupTime: "9:00 AM - 5:00 PM",
-      details:
-        "Professional wire cutters with comfort grip handles. Ideal for electrical work.",
-    },
-  ]);
-
-  // State for confirmation dialog
+  const [pendingItems, setPendingItems] = useState<ListingItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<ConfirmationDialog>({
     show: false,
     itemId: null,
     type: null,
   });
-
-  // State for success message
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchTools();
+  }, []);
+
+  const fetchTools = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/tools');
+      if (!response.ok) {
+        throw new Error('Failed to fetch tools');
+      }
+      const data = await response.json();
+      setPendingItems(data);
+    } catch (err) {
+      console.error('Error fetching tools:', err);
+      setError('Failed to load tools');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const showConfirmation = (id: number, type: "approve" | "disapprove") => {
     setConfirmation({ show: true, itemId: id, type });
@@ -110,24 +61,62 @@ export default function ApprovePage() {
     setConfirmation({ show: false, itemId: null, type: null });
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!confirmation.itemId || !confirmation.type) return;
 
-    const action = confirmation.type === "approve" ? "Approved" : "Disapproved";
-    setPendingItems((items) =>
-      items.filter((item) => item.id !== confirmation.itemId)
-    );
-    hideConfirmation();
+    try {
+      const response = await fetch(`/api/tools/${confirmation.itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: confirmation.type === 'approve' ? 'active' : 'inactive'
+        }),
+      });
 
-    // Show success message
-    setSuccessMessage(`${action} successfully!`);
-    setTimeout(() => setSuccessMessage(null), 3000);
+      if (!response.ok) {
+        throw new Error('Failed to update tool status');
+      }
+
+      // Update local state
+      setPendingItems((items) =>
+        items.filter((item) => item.id !== confirmation.itemId)
+      );
+
+      // Show success message
+      const action = confirmation.type === "approve" ? "Approved" : "Disapproved";
+      setSuccessMessage(`${action} successfully!`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      console.error('Error updating tool:', err);
+      setError('Failed to update tool status');
+    } finally {
+      hideConfirmation();
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading tools...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-900 mb-8">Approve</h1>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+            {error}
+          </div>
+        )}
 
         {/* Success Message */}
         <AnimatePresence>
@@ -160,7 +149,7 @@ export default function ApprovePage() {
 
                 <div className="aspect-[4/3] w-full mb-4 overflow-hidden rounded-lg">
                   <img
-                    src={item.image}
+                    src={item.image_url || '/images/tools/hammer.jpg'}
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />
@@ -168,28 +157,20 @@ export default function ApprovePage() {
 
                 <div className="space-y-3 mb-4">
                   <div className="bg-gray-50 px-4 py-2 rounded-lg text-gray-900 font-medium">
-                    ${item.price}/Day
+                    ${item.price_per_day}/Day
                   </div>
                   <div className="text-sm text-gray-600">
                     <p>
-                      <span className="font-medium">Renter:</span>{" "}
-                      {item.renterName} (ID: {item.renterId})
+                      <span className="font-medium">Owner:</span>{" "}
+                      {item.owner_name} (ID: {item.owner_id})
                     </p>
                     <p>
                       <span className="font-medium">Created:</span>{" "}
-                      {item.createdAt}
-                    </p>
-                    <p>
-                      <span className="font-medium">Pickup:</span>{" "}
-                      {item.pickupLocation}
-                    </p>
-                    <p>
-                      <span className="font-medium">Hours:</span>{" "}
-                      {item.pickupTime}
+                      {new Date(item.created_at).toLocaleString()}
                     </p>
                     <p className="mt-2">
                       <span className="font-medium">Details:</span>{" "}
-                      {item.details}
+                      {item.description}
                     </p>
                   </div>
                 </div>

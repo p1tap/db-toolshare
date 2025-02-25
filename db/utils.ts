@@ -232,7 +232,7 @@ export async function getToolsByOwnerId(ownerId: number): Promise<Tool[]> {
 // Update tool
 export async function updateTool(
   id: number,
-  params: Partial<CreateToolParams>
+  params: Partial<CreateToolParams & { status?: string }>
 ): Promise<Tool | null> {
   const updates: string[] = [];
   const values: (string | number)[] = [];
@@ -257,6 +257,11 @@ export async function updateTool(
     values.push(params.image_url);
   }
 
+  if (params.status !== undefined) {
+    updates.push(`status = $${updates.length + 1}`);
+    values.push(params.status);
+  }
+
   if (updates.length === 0) return null;
 
   values.push(id);
@@ -264,7 +269,7 @@ export async function updateTool(
   const query = `
     UPDATE tools
     SET ${updates.join(", ")}
-    WHERE id = $${values.length} AND status = 'active'
+    WHERE id = $${values.length}
     RETURNING *
   `;
 
