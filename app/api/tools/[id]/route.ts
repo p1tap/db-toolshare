@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToolById, updateTool, deleteTool } from "@/db/utils";
+import { getMockToolById } from "@/app/data/mockTools";
 
 type Params = { params: { id: string } };
 
@@ -19,27 +20,50 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const toolId = parseInt(params.id);
+    const { id } = await params;
+    console.log('Fetching tool with ID:', id);
+    
+    const toolId = parseInt(id);
     if (isNaN(toolId)) {
+      console.error('Invalid tool ID:', id);
       return NextResponse.json(
         { error: 'Invalid tool ID' },
         { status: 400 }
       );
     }
 
-    const tool = await getToolById(toolId);
-    if (!tool) {
-      return NextResponse.json(
-        { error: 'Tool not found' },
-        { status: 404 }
-      );
+    try {
+      console.log('Attempting to fetch tool from database...');
+      // First try to get the tool from the database
+      const tool = await getToolById(toolId);
+      console.log('Database response:', tool);
+      
+      if (tool) {
+        console.log('Successfully fetched tool from database');
+        return NextResponse.json(tool);
+      }
+    } catch (dbError) {
+      console.error('Database error details:', dbError);
+      // If there's a database error, we'll fall back to mock data
     }
 
-    return NextResponse.json(tool);
+    console.log('Falling back to mock data...');
+    // If we couldn't get the tool from the database, try mock data
+    const mockTool = getMockToolById(toolId);
+    if (mockTool) {
+      console.log('Found mock tool:', mockTool);
+      return NextResponse.json(mockTool);
+    }
+
+    console.log('Tool not found in either database or mock data');
+    return NextResponse.json(
+      { error: 'Tool not found' },
+      { status: 404 }
+    );
   } catch (error) {
     console.error('Error fetching tool:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch tool' },
+      { error: 'Failed to fetch tool', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

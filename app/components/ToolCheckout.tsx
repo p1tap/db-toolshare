@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { processPayment } from '@/app/utils/payment';
+import { getCurrentUserId } from '@/app/utils/session';
 
 interface ToolCheckoutProps {
   toolId: number;
@@ -25,11 +26,27 @@ export default function ToolCheckout({
   const [error, setError] = useState<string | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [userId, setUserId] = useState<number | null>(null);
   const router = useRouter();
 
   const totalAmount = pricePerDay * duration;
 
+  // Get the current user ID on component mount
+  useEffect(() => {
+    const currentUserId = getCurrentUserId();
+    setUserId(currentUserId);
+    
+    if (!currentUserId) {
+      setError('You must be logged in to rent tools. Please log in and try again.');
+    }
+  }, []);
+
   const handleComplete = async () => {
+    if (!userId) {
+      setError('You must be logged in to rent tools. Please log in and try again.');
+      return;
+    }
+
     if (deliveryMethod === 'delivery' && !deliveryAddress.trim()) {
       setError('Please enter a delivery address');
       return;
@@ -46,6 +63,7 @@ export default function ToolCheckout({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          user_id: userId,
           tool_id: toolId,
           start_date: new Date().toISOString(), // You might want to use selected dates instead
           end_date: new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString(),
@@ -60,17 +78,44 @@ export default function ToolCheckout({
 
       const order = await orderResponse.json();
 
+      // Create a rental for this order
+      const rentalResponse = await fetch('/api/rentals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tool_id: toolId,
+          renter_id: userId,
+          start_date: new Date().toISOString(),
+          end_date: new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString(),
+          total_price: totalAmount
+        }),
+      });
+
+      if (!rentalResponse.ok) {
+        const rentalError = await rentalResponse.json();
+        console.error('Rental error:', rentalError);
+        throw new Error('Failed to create rental');
+      }
+
+      const rental = await rentalResponse.json();
+
       // 2. Process payment
-      const paymentResult = await processPayment(order.id, totalAmount);
+      const paymentResult = await processPayment(rental.id, totalAmount);
       
       if (!paymentResult.success) {
         throw new Error('Payment failed');
       }
 
       // 3. Show success message and redirect
-      alert('Order completed successfully!');
-      router.push('/account/orders');
-      if (onClose) onClose();
+      alert(`Order completed successfully! Your rental for ${toolName} has been confirmed.`);
+      
+      // Redirect to orders page after a short delay
+      setTimeout(() => {
+        router.push('/account/orders');
+        if (onClose) onClose();
+      }, 1000);
       
     } catch (err) {
       console.error('Checkout error:', err);

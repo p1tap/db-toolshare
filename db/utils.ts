@@ -8,23 +8,31 @@ export interface User {
   password: string;
   status: "active" | "inactive";
   created_at: Date;
+  address?: string;
+  phone?: string;
+  date_of_birth?: Date;
+  full_name?: string;
 }
 
 export interface CreateUserParams {
   username: string;
   email: string;
   password: string;
+  address?: string;
+  phone?: string;
+  date_of_birth?: Date;
+  full_name?: string;
 }
 
 // Create a new user
 export async function createUser(params: CreateUserParams): Promise<User> {
-  const { username, email, password } = params;
+  const { username, email, password, address, phone, date_of_birth, full_name } = params;
 
   const result = await pool.query(`
-    INSERT INTO users (username, email, password, status)
-    VALUES ($1, $2, $3, 'active')
+    INSERT INTO users (username, email, password, status, address, phone, date_of_birth, full_name)
+    VALUES ($1, $2, $3, 'active', $4, $5, $6, $7)
     RETURNING *
-  `, [username, email, password]);
+  `, [username, email, password, address || null, phone || null, date_of_birth || null, full_name || null]);
 
   return result.rows[0] as User;
 }
@@ -78,7 +86,7 @@ export async function updateUser(
   params: Partial<CreateUserParams>
 ): Promise<User | null> {
   const updates: string[] = [];
-  const values: string[] = [];
+  const values: any[] = [];
 
   if (params.username !== undefined) {
     updates.push(`username = $${updates.length + 1}`);
@@ -94,10 +102,30 @@ export async function updateUser(
     updates.push(`password = $${updates.length + 1}`);
     values.push(params.password);
   }
+  
+  if (params.address !== undefined) {
+    updates.push(`address = $${updates.length + 1}`);
+    values.push(params.address);
+  }
+  
+  if (params.phone !== undefined) {
+    updates.push(`phone = $${updates.length + 1}`);
+    values.push(params.phone);
+  }
+  
+  if (params.date_of_birth !== undefined) {
+    updates.push(`date_of_birth = $${updates.length + 1}`);
+    values.push(params.date_of_birth);
+  }
+  
+  if (params.full_name !== undefined) {
+    updates.push(`full_name = $${updates.length + 1}`);
+    values.push(params.full_name);
+  }
 
   if (updates.length === 0) return null;
 
-  values.push(id.toString());
+  values.push(id);
 
   const query = `
     UPDATE users
@@ -171,14 +199,21 @@ export async function getTools(): Promise<Tool[]> {
 
 // Get tool by ID with owner details
 export async function getToolById(id: number): Promise<Tool | null> {
-  const result = await pool.query(`
-    SELECT t.*, u.username as owner_name
-    FROM tools t
-    JOIN users u ON t.owner_id = u.id
-    WHERE t.id = $1 AND t.status = 'active'
-  `, [id]);
+  console.log('getToolById called with id:', id);
+  try {
+    const result = await pool.query(`
+      SELECT t.*, u.username as owner_name
+      FROM tools t
+      JOIN users u ON t.owner_id = u.id
+      WHERE t.id = $1 AND t.status = 'active'
+    `, [id]);
 
-  return (result.rows[0] as Tool) || null;
+    console.log('Database query result:', result.rows);
+    return (result.rows[0] as Tool) || null;
+  } catch (error) {
+    console.error('Error in getToolById:', error);
+    throw error; // Re-throw to be caught by the API route
+  }
 }
 
 // Get tools by owner ID
@@ -432,6 +467,8 @@ export interface Order {
   created_at: Date;
   user_name?: string;
   tool_name?: string;
+  delivery_type?: 'pickup' | 'delivery';
+  delivery_address?: string | null;
 }
 
 export interface CreateOrderParams {
@@ -439,6 +476,9 @@ export interface CreateOrderParams {
   tool_id: number;
   start_date: Date;
   end_date: Date;
+  status?: OrderStatus;
+  delivery_type?: 'pickup' | 'delivery';
+  delivery_address?: string | null;
 }
 
 export interface UpdateOrderParams {
@@ -449,16 +489,16 @@ export interface UpdateOrderParams {
 
 // Create a new order
 export async function createOrder(params: CreateOrderParams): Promise<Order> {
-  const { user_id, tool_id, start_date, end_date } = params;
+  const { user_id, tool_id, start_date, end_date, status, delivery_type, delivery_address } = params;
 
   const result = await pool.query(`
     INSERT INTO orders (
-      user_id, tool_id, start_date, end_date, status
+      user_id, tool_id, start_date, end_date, status, delivery_type, delivery_address
     ) VALUES (
-      $1, $2, $3, $4, 'pending'
+      $1, $2, $3, $4, $5, $6, $7
     )
     RETURNING *
-  `, [user_id, tool_id, start_date.toISOString(), end_date.toISOString()]);
+  `, [user_id, tool_id, start_date.toISOString(), end_date.toISOString(), status || 'pending', delivery_type, delivery_address]);
 
   return result.rows[0] as Order;
 }

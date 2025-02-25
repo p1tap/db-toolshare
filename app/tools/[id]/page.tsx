@@ -1,7 +1,8 @@
-import { getToolById } from "@/db/utils";
-import ToolCheckoutClient from "./ToolCheckoutClient";
 import Navbar from "../../components/Navbar";
 import Image from "next/image";
+import ToolCheckoutClient from "./ToolCheckoutClient";
+import { notFound } from "next/navigation";
+import { mockTools, Tool } from "@/app/data/mockTools";
 
 interface ToolDetailsProps {
   params: {
@@ -9,12 +10,51 @@ interface ToolDetailsProps {
   };
 }
 
-export default async function ToolDetails({ params }: ToolDetailsProps) {
-  const { id } = params;
-  const tool = await getToolById(parseInt(id));
+// Server-side function to fetch tool data
+async function getToolData(id: string): Promise<{ tool: Tool | null, isMockData: boolean }> {
+  try {
+    // First try to get the tool from the database via API
+    const res = await fetch(`http://localhost:3000/api/tools/${id}`, {
+      cache: 'no-store',
+      next: { tags: [`tool-${id}`] }
+    });
+    
+    if (res.ok) {
+      const tool = await res.json();
+      return { tool, isMockData: false };
+    }
+    
+    // If API fails, fall back to mock data
+    console.log("API failed, falling back to mock data");
+    const toolId = parseInt(id);
+    if (!isNaN(toolId)) {
+      const mockTool = mockTools.find(t => t.id === toolId);
+      if (mockTool) return { tool: mockTool, isMockData: true };
+    }
+    
+    return { tool: null, isMockData: false };
+  } catch (error) {
+    console.error("Error fetching tool data:", error);
+    
+    // Fall back to mock data if API call fails
+    const toolId = parseInt(id);
+    if (!isNaN(toolId)) {
+      const mockTool = mockTools.find(t => t.id === toolId);
+      if (mockTool) return { tool: mockTool, isMockData: true };
+    }
+    
+    return { tool: null, isMockData: false };
+  }
+}
 
+export default async function ToolDetails({ params }: ToolDetailsProps) {
+  const { id } = await params;
+  
+  // Try to get the tool from the API first
+  const { tool, isMockData } = await getToolData(id);
+  
   if (!tool) {
-    return <div className="p-8 text-center text-red-500">Tool not found</div>;
+    return notFound();
   }
 
   return (
@@ -22,12 +62,20 @@ export default async function ToolDetails({ params }: ToolDetailsProps) {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {isMockData && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <p className="text-yellow-700">
+              Note: Showing mock data for demonstration purposes.
+            </p>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left Column - Image */}
           <div className="bg-white rounded-lg p-4">
             <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
               <Image
-                src={tool.image_url}
+                src={tool.image_url || "/images/tools/hammer.jpg"}
                 alt={tool.name}
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-300"
@@ -65,6 +113,7 @@ export default async function ToolDetails({ params }: ToolDetailsProps) {
                 toolId={tool.id}
                 toolName={tool.name}
                 pricePerDay={tool.price_per_day}
+                useMockData={isMockData}
               />
             </div>
           </div>

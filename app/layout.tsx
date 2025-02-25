@@ -16,7 +16,8 @@ export default function RootLayout({
   const pathname = usePathname();
   const isRenterPath = pathname?.startsWith("/renter");
   const isAdminPath = pathname?.startsWith("/admin");
-  const shouldShowNavbar = !isRenterPath && !isAdminPath;
+  const isAuthPath = pathname === "/login" || pathname === "/register";
+  const shouldShowNavbar = !isRenterPath && !isAdminPath && !isAuthPath;
 
   return (
     <html lang="en">

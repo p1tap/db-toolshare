@@ -109,7 +109,7 @@ export default function Navbar() {
 
             {/* Right section */}
             <div className="flex items-center gap-4">
-              <NavLink href="/history">History</NavLink>
+              <NavLink href="/account/history">History</NavLink>
               <NavLink href="/support">Support</NavLink>
 
               {/* Profile dropdown */}
@@ -132,21 +132,30 @@ export default function Navbar() {
                       transition={{ type: "spring", bounce: 0.25 }}
                       className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200"
                     >
-                      {["account", "history"].map((item, index) => (
-                        <motion.div
-                          key={item}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <Link
+                          href="/account"
+                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                         >
-                          <Link
-                            href={`/${item}`}
-                            className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                          >
-                            {item}
-                          </Link>
-                        </motion.div>
-                      ))}
+                          Account
+                        </Link>
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Link
+                          href="/account/history"
+                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                        >
+                          History
+                        </Link>
+                      </motion.div>
                       <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}

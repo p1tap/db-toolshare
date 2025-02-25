@@ -1,0 +1,508 @@
+# ToolShare Application - User Flow, API Endpoints, and SQL Queries
+
+## Database Connection Instructions
+
+### Connect to PostgreSQL Database
+```bash
+# Using full path (recommended)
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d toolshare
+
+# Or if psql is in your PATH
+psql -U postgres -h localhost -d toolshare
+```
+
+When prompted for password, enter your PostgreSQL password (not your Windows user password).
+
+### Common Database Commands
+```sql
+-- Show all tables
+\dt
+
+-- Show table structure
+\d table_name
+
+-- Exit psql
+\q
+```
+
+## 1. User Registration Flow
+
+### User Flow:
+1. User navigates to `/register`
+2. User fills out registration form (username, email, password, address, phone, date of birth)
+3. User submits the form
+4. System validates input and checks for existing username/email
+5. System creates new user account
+6. User is redirected to login page
+
+### API Endpoints:
+- **POST /api/auth/register**
+  - Request Body: `{ username, email, password, address?, phone?, dateOfBirth? }`
+  - Response: `{ id, username, email, status, created_at }`
+
+### SQL Queries:
+```sql
+-- Check if email exists
+SELECT EXISTS(
+  SELECT 1 FROM users 
+  WHERE email = $1 AND status = 'active'
+) as email_exists;
+
+-- Check if username exists
+SELECT EXISTS(
+  SELECT 1 FROM users 
+  WHERE username = $1 AND status = 'active'
+) as username_exists;
+
+-- Create a new user
+INSERT INTO users (username, email, password, status, address, phone, date_of_birth)
+VALUES ($1, $2, $3, 'active', $4, $5, $6)
+RETURNING *;
+```
+
+## 2. User Login Flow
+
+### User Flow:
+1. User navigates to `/login`
+2. User selects role (User, Renter, Admin)
+3. User enters username and password
+4. System validates credentials
+5. System creates session/token
+6. User is redirected to appropriate dashboard based on role
+
+### API Endpoints:
+- **POST /api/auth/login**
+  - Request Body: `{ username, password, role }`
+  - Response: `{ token, user: { id, username, email, role } }`
+
+### SQL Queries:
+```sql
+-- Get user by username (for login)
+SELECT id, username, email, password, role
+FROM users
+WHERE username = $1 AND status = 'active';
+```
+
+## 3. Browse Tools Flow
+
+### User Flow:
+1. User navigates to `/home` or `/tools`
+2. System displays available tools
+3. User can filter by category or search for specific tools
+4. User clicks on a tool to view details
+
+### API Endpoints:
+- **GET /api/tools**
+  - Query Parameters: `{ category?, search?, page?, limit? }`
+  - Response: `{ tools: [{ id, name, price_per_day, description, image_url, owner_id, owner_name }] }`
+
+- **GET /api/tools/[id]**
+  - Response: `{ id, name, price_per_day, description, image_url, owner_id, owner_name }`
+
+### SQL Queries:
+```sql
+-- Get all tools with owner details
+SELECT t.*, u.username as owner_name
+FROM tools t
+JOIN users u ON t.owner_id = u.id
+WHERE t.status = 'active'
+ORDER BY t.created_at DESC;
+
+-- Get tool by ID with owner details
+SELECT t.*, u.username as owner_name
+FROM tools t
+JOIN users u ON t.owner_id = u.id
+WHERE t.id = $1 AND t.status = 'active';
+```
+
+## 4. Tool Rental Flow
+
+### User Flow:
+1. User views tool details at `/tools/[id]`
+2. User selects rental duration
+3. User clicks "Rent Now"
+4. System checks tool availability
+5. User confirms rental details
+6. User proceeds to checkout
+
+### API Endpoints:
+- **GET /api/tools/[id]/availability**
+  - Query Parameters: `{ start_date, end_date }`
+  - Response: `{ available: boolean, conflicting_rentals?: [] }`
+
+- **POST /api/rentals**
+  - Request Body: `{ tool_id, renter_id, start_date, end_date, total_price }`
+  - Response: `{ id, tool_id, renter_id, start_date, end_date, status, total_price }`
+
+### SQL Queries:
+```sql
+-- Check if a tool is available for a specific date range
+SELECT 
+  r.*,
+  t.name as tool_name,
+  u.username as renter_name
+FROM rentals r
+JOIN tools t ON r.tool_id = t.id
+JOIN users u ON r.renter_id = u.id
+WHERE 
+  r.tool_id = $1 AND
+  r.status IN ('pending', 'active') AND
+  (
+    (r.start_date <= $2 AND r.end_date >= $2) OR  -- Requested start date falls within existing rental
+    (r.start_date <= $3 AND r.end_date >= $3) OR  -- Requested end date falls within existing rental
+    (r.start_date >= $2 AND r.end_date <= $3)     -- Existing rental falls completely within requested period
+  );
+
+-- Create a new rental
+INSERT INTO rentals (
+  tool_id, renter_id, start_date, end_date, status, total_price
+) VALUES (
+  $1, $2, $3, $4, 'pending', $5
+)
+RETURNING *;
+```
+
+## 5. Checkout and Payment Flow
+
+### User Flow:
+1. User reviews rental details at checkout
+2. User enters payment information
+3. System processes payment
+4. System updates rental status to "active"
+5. User receives confirmation
+
+### API Endpoints:
+- **POST /api/payments**
+  - Request Body: `{ rental_id, amount, payment_method, transaction_id? }`
+  - Response: `{ id, rental_id, amount, payment_date, payment_method, status, transaction_id }`
+
+- **PUT /api/rentals/[id]**
+  - Request Body: `{ status: "active" }`
+  - Response: `{ id, tool_id, renter_id, start_date, end_date, status, total_price }`
+
+### SQL Queries:
+```sql
+-- Create a new payment
+INSERT INTO payments (rental_id, amount, payment_method, transaction_id)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- Update rental status
+UPDATE rentals
+SET status = $2
+WHERE id = $1
+RETURNING *;
+```
+
+## 6. Order Management Flow
+
+### User Flow:
+1. User navigates to `/account/orders` or `/account/rentals`
+2. System displays user's orders/rentals
+3. User can view details, cancel, or return tools
+
+### API Endpoints:
+- **GET /api/users/[id]/rentals**
+  - Response: `{ rentals: [{ id, tool_id, tool_name, start_date, end_date, status, total_price }] }`
+
+- **PUT /api/rentals/[id]/cancel**
+  - Response: `{ id, tool_id, renter_id, start_date, end_date, status: "cancelled", total_price }`
+
+- **PUT /api/rentals/[id]/complete**
+  - Response: `{ id, tool_id, renter_id, start_date, end_date, status: "completed", total_price }`
+
+### SQL Queries:
+```sql
+-- Get rentals by user ID (as renter)
+SELECT 
+  r.*,
+  t.name as tool_name,
+  u.username as renter_name
+FROM rentals r
+JOIN tools t ON r.tool_id = t.id
+JOIN users u ON r.renter_id = u.id
+WHERE r.renter_id = $1
+ORDER BY r.created_at DESC;
+
+-- Cancel rental
+UPDATE rentals
+SET status = 'cancelled'
+WHERE id = $1
+RETURNING *;
+
+-- Complete rental
+UPDATE rentals
+SET status = 'completed'
+WHERE id = $1
+RETURNING *;
+```
+
+## 7. User Profile Management
+
+### User Flow:
+1. User navigates to `/account/profile`
+2. System displays user profile information
+3. User can edit profile details
+4. User submits changes
+5. System updates user information
+
+### API Endpoints:
+- **GET /api/users/[id]**
+  - Response: `{ id, username, email, address, phone, date_of_birth }`
+
+- **PUT /api/users/[id]**
+  - Request Body: `{ username?, email?, address?, phone?, date_of_birth? }`
+  - Response: `{ id, username, email, address, phone, date_of_birth }`
+
+### SQL Queries:
+```sql
+-- Get user by ID
+SELECT * FROM users
+WHERE id = $1 AND status = 'active';
+
+-- Update user
+UPDATE users
+SET 
+  username = COALESCE($2, username),
+  email = COALESCE($3, email),
+  address = COALESCE($4, address),
+  phone = COALESCE($5, phone),
+  date_of_birth = COALESCE($6, date_of_birth)
+WHERE id = $1 AND status = 'active'
+RETURNING *;
+```
+
+## 8. Payment History
+
+### User Flow:
+1. User navigates to `/account/payments`
+2. System displays user's payment history
+3. User can view payment details
+
+### API Endpoints:
+- **GET /api/users/[id]/payments**
+  - Response: `{ payments: [{ id, rental_id, amount, payment_date, payment_method, status, transaction_id, rental_details }] }`
+
+### SQL Queries:
+```sql
+-- Get payments for a user
+SELECT 
+  p.*,
+  t.name as tool_name,
+  u.username as renter_name
+FROM payments p
+JOIN rentals r ON p.rental_id = r.id
+JOIN tools t ON r.tool_id = t.id
+JOIN users u ON r.renter_id = u.id
+WHERE r.renter_id = $1
+ORDER BY p.payment_date DESC;
+```
+
+## 9. Tool Owner Flow (Renter)
+
+### User Flow:
+1. Renter logs in and navigates to `/renter/tools`
+2. Renter can view, add, edit, or remove their tools
+3. Renter can view rental requests and manage rentals
+
+### API Endpoints:
+- **GET /api/tools/owner/[id]**
+  - Response: `{ tools: [{ id, name, price_per_day, description, image_url }] }`
+
+- **POST /api/tools**
+  - Request Body: `{ name, price_per_day, description, image_url, owner_id }`
+  - Response: `{ id, name, price_per_day, description, image_url, owner_id }`
+
+- **GET /api/rentals/tool/[id]**
+  - Response: `{ rentals: [{ id, tool_id, renter_id, renter_name, start_date, end_date, status, total_price }] }`
+
+### SQL Queries:
+```sql
+-- Get tools by owner ID
+SELECT t.*, u.username as owner_name
+FROM tools t
+JOIN users u ON t.owner_id = u.id
+WHERE t.owner_id = $1 AND t.status = 'active'
+ORDER BY t.created_at DESC;
+
+-- Create a new tool
+INSERT INTO tools (name, price_per_day, description, image_url, owner_id, status)
+VALUES ($1, $2, $3, $4, $5, 'active')
+RETURNING *;
+
+-- Get rentals by tool ID
+SELECT 
+  r.*,
+  t.name as tool_name,
+  u.username as renter_name
+FROM rentals r
+JOIN tools t ON r.tool_id = t.id
+JOIN users u ON r.renter_id = u.id
+WHERE r.tool_id = $1
+ORDER BY r.created_at DESC;
+```
+
+## 10. Admin Dashboard
+
+### User Flow:
+1. Admin logs in and navigates to `/admin/dashboard`
+2. Admin can view all users, tools, rentals, and payments
+3. Admin can approve/reject tools, manage users, and view statistics
+
+### API Endpoints:
+- **GET /api/admin/users**
+  - Response: `{ users: [{ id, username, email, status, created_at }] }`
+
+- **GET /api/admin/tools**
+  - Response: `{ tools: [{ id, name, price_per_day, owner_id, owner_name, status }] }`
+
+- **GET /api/admin/rentals**
+  - Response: `{ rentals: [{ id, tool_id, tool_name, renter_id, renter_name, status, total_price }] }`
+
+- **GET /api/admin/statistics**
+  - Response: `{ user_count, tool_count, active_rentals, completed_rentals, total_revenue }`
+
+### SQL Queries:
+```sql
+-- Get all users (admin)
+SELECT * FROM users
+ORDER BY created_at DESC;
+
+-- Get all tools with owner details (admin)
+SELECT t.*, u.username as owner_name
+FROM tools t
+JOIN users u ON t.owner_id = u.id
+ORDER BY t.created_at DESC;
+
+-- Get all rentals with details (admin)
+SELECT 
+  r.*,
+  t.name as tool_name,
+  u.username as renter_name
+FROM rentals r
+JOIN tools t ON r.tool_id = t.id
+JOIN users u ON r.renter_id = u.id
+ORDER BY r.created_at DESC;
+
+-- Get system statistics (admin)
+SELECT
+  (SELECT COUNT(*) FROM users WHERE status = 'active') as user_count,
+  (SELECT COUNT(*) FROM tools WHERE status = 'active') as tool_count,
+  (SELECT COUNT(*) FROM rentals WHERE status = 'active') as active_rentals,
+  (SELECT COUNT(*) FROM rentals WHERE status = 'completed') as completed_rentals,
+  (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'completed') as total_revenue;
+```
+
+## 11. Tool Availability Analytics
+
+### SQL Queries:
+```sql
+-- Get tools with availability statistics
+SELECT 
+  t.id,
+  t.name,
+  t.price_per_day,
+  COUNT(DISTINCT r.id) as upcoming_bookings,
+  -- Count the number of bookings as a simple metric
+  COUNT(DISTINCT r.id) as booked_count,
+  -- If a tool has no bookings, it's available for all 30 days
+  CASE 
+    WHEN COUNT(DISTINCT r.id) = 0 THEN 30
+    ELSE 30 - COUNT(DISTINCT r.id) * 3  -- Assuming each booking takes about 3 days on average
+  END as estimated_available_days
+FROM tools t
+LEFT JOIN rentals r ON 
+  t.id = r.tool_id AND 
+  r.status IN ('pending', 'active') AND
+  (
+    (r.start_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days') OR
+    (r.end_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days') OR
+    (r.start_date <= CURRENT_DATE AND r.end_date >= CURRENT_DATE + INTERVAL '30 days')
+  )
+WHERE t.status = 'active'
+GROUP BY t.id, t.name, t.price_per_day
+ORDER BY estimated_available_days DESC;
+```
+
+## 12. Rental Analytics
+
+### SQL Queries:
+```sql
+-- Monthly rental trends
+SELECT 
+  DATE_TRUNC('month', r.created_at) as month,
+  COUNT(*) as total_rentals,
+  COUNT(CASE WHEN r.status = 'completed' THEN 1 END) as completed_rentals,
+  COUNT(CASE WHEN r.status = 'cancelled' THEN 1 END) as cancelled_rentals,
+  SUM(r.total_price) as total_revenue,
+  AVG(r.total_price) as average_rental_price,
+  AVG(r.end_date - r.start_date) as average_rental_duration
+FROM rentals r
+GROUP BY DATE_TRUNC('month', r.created_at)
+ORDER BY month DESC;
+
+-- Top rented tools
+SELECT 
+  t.id,
+  t.name,
+  COUNT(r.id) as rental_count,
+  SUM(r.total_price) as total_revenue,
+  AVG(r.total_price) as average_rental_price,
+  AVG(r.end_date - r.start_date) as average_rental_duration
+FROM tools t
+JOIN rentals r ON t.id = r.tool_id
+WHERE r.status IN ('completed', 'active')
+GROUP BY t.id, t.name
+ORDER BY rental_count DESC
+LIMIT 10;
+```
+
+## 13. Common Order Queries
+
+### Check All Orders
+```sql
+-- Get all orders with tool and user details (latest first)
+SELECT o.*, t.name as tool_name, u.username as user_name
+FROM orders o
+JOIN tools t ON o.tool_id = t.id
+JOIN users u ON o.user_id = u.id
+ORDER BY o.created_at DESC
+LIMIT 5;
+
+-- Get orders by status
+SELECT o.*, t.name as tool_name, u.username as user_name
+FROM orders o
+JOIN tools t ON o.tool_id = t.id
+JOIN users u ON o.user_id = u.id
+WHERE o.status = 'pending'  -- or 'active', 'completed', 'cancelled'
+ORDER BY o.created_at DESC;
+
+-- Get orders for a specific user
+SELECT o.*, t.name as tool_name
+FROM orders o
+JOIN tools t ON o.tool_id = t.id
+WHERE o.user_id = 1  -- replace with actual user_id
+ORDER BY o.created_at DESC;
+
+-- Get today's orders
+SELECT o.*, t.name as tool_name, u.username as user_name
+FROM orders o
+JOIN tools t ON o.tool_id = t.id
+JOIN users u ON o.user_id = u.id
+WHERE DATE(o.created_at) = CURRENT_DATE
+ORDER BY o.created_at DESC;
+
+-- Get order statistics
+SELECT 
+    status,
+    COUNT(*) as order_count,
+    COUNT(DISTINCT user_id) as unique_users,
+    COUNT(DISTINCT tool_id) as unique_tools
+FROM orders
+GROUP BY status;
+```
+
+These queries are useful for monitoring and debugging the order system. Remember to:
+1. Replace user_id values with actual IDs when needed
+2. Add WHERE clauses to filter by date ranges or other criteria
+3. Use LIMIT to restrict the number of results when needed 

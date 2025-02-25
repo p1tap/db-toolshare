@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { getCurrentUserId } from "@/app/utils/session";
+import { useRouter } from "next/navigation";
 
 export default function AccountPage() {
+  const router = useRouter();
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     dateOfBirth: {
@@ -14,10 +21,87 @@ export default function AccountPage() {
     },
     phoneNumber: "",
     fullName: "",
-    address1: "",
+    address: "",
     city: "",
     postCode: "",
+    username: "",
   });
+
+  // Check if user is logged in
+  useEffect(() => {
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId) {
+      // Redirect to login if not logged in
+      router.push('/login');
+      return;
+    }
+    
+    setUserId(currentUserId);
+  }, [router]);
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    if (!userId) return;
+    
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/users/current?userId=${userId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch user data');
+        }
+        
+        const userData = await response.json();
+        
+        // Format date of birth if available
+        let day = "", month = "", year = "";
+        if (userData.date_of_birth) {
+          const date = new Date(userData.date_of_birth);
+          day = date.getDate().toString().padStart(2, '0');
+          month = (date.getMonth() + 1).toString().padStart(2, '0');
+          year = date.getFullYear().toString();
+        }
+        
+        // Parse address components if available
+        let address = userData.address || "";
+        let city = "";
+        let postCode = "";
+        
+        // Simple parsing - assumes format like "123 Main St, City, PostCode"
+        if (address && address.includes(',')) {
+          const parts = address.split(',');
+          if (parts.length >= 3) {
+            address = parts[0].trim();
+            city = parts[1].trim();
+            postCode = parts[2].trim();
+          }
+        }
+        
+        setFormData({
+          email: userData.email || "",
+          username: userData.username || "",
+          dateOfBirth: {
+            day,
+            month,
+            year,
+          },
+          phoneNumber: userData.phone || "",
+          fullName: userData.full_name || "",
+          address: address,
+          city: city,
+          postCode: postCode,
+        });
+      } catch (err) {
+        setError('Failed to load user data. Please try again later.');
+        console.error('Error fetching user data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserData();
+  }, [userId]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,11 +133,85 @@ export default function AccountPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Form submitted:", formData);
+    if (!userId) return;
+    
+    setUpdateSuccess(false);
+    setError(null);
+    
+    try {
+      // Format date of birth
+      let date_of_birth = null;
+      const { day, month, year } = formData.dateOfBirth;
+      if (day && month && year) {
+        date_of_birth = `${year}-${month}-${day}`;
+      }
+      
+      // Format address
+      const address = formData.address + 
+        (formData.city ? `, ${formData.city}` : '') + 
+        (formData.postCode ? `, ${formData.postCode}` : '');
+      
+      // Log the data being sent
+      console.log('Sending update data:', {
+        userId,
+        email: formData.email,
+        username: formData.username,
+        address,
+        phone: formData.phoneNumber,
+        date_of_birth,
+        fullName: formData.fullName,
+      });
+      
+      const response = await fetch('/api/users/current', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          email: formData.email,
+          username: formData.username,
+          address,
+          phone: formData.phoneNumber,
+          date_of_birth,
+          fullName: formData.fullName,
+        }),
+      });
+      
+      const responseData = await response.json();
+      console.log('Update response:', responseData);
+      
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to update profile');
+      }
+      
+      setUpdateSuccess(true);
+      
+      // Refresh the page after a short delay to show the updated data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
+      // Scroll to top to show success message
+      window.scrollTo(0, 0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
+      console.error('Error updating profile:', err);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -62,6 +220,18 @@ export default function AccountPage() {
           <h1 className="text-2xl font-semibold text-gray-900 mb-6">
             Account Settings
           </h1>
+          
+          {updateSuccess && (
+            <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+              Profile updated successfully!
+            </div>
+          )}
+          
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Profile Image Section */}
@@ -94,6 +264,23 @@ export default function AccountPage() {
 
               {/* Basic Information */}
               <div className="flex-1 space-y-4">
+                <div>
+                  <label
+                    htmlFor="username"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    name="username"
+                    id="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                
                 <div>
                   <label
                     htmlFor="email"
@@ -189,16 +376,16 @@ export default function AccountPage() {
             <div className="space-y-4">
               <div>
                 <label
-                  htmlFor="address1"
+                  htmlFor="address"
                   className="block text-sm font-medium text-gray-700"
                 >
                   Address
                 </label>
                 <input
                   type="text"
-                  name="address1"
-                  id="address1"
-                  value={formData.address1}
+                  name="address"
+                  id="address"
+                  value={formData.address}
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
@@ -245,7 +432,7 @@ export default function AccountPage() {
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Update Profile
               </button>

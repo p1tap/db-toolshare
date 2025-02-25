@@ -25,16 +25,32 @@ export default function SupportPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Support request submitted:", formData);
-    // Show success animation
-    setShowSuccess(true);
-    // Redirect to home page after animation
-    setTimeout(() => {
-      router.push("/home");
-    }, 2000);
+    try {
+      const response = await fetch('/api/support', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to submit support request');
+      }
+
+      // Show success animation
+      setShowSuccess(true);
+      // Redirect to home page after animation
+      setTimeout(() => {
+        router.push("/home");
+      }, 2000);
+    } catch (error) {
+      console.error('Error submitting support request:', error);
+      // You might want to show an error message to the user here
+    }
   };
 
   return (

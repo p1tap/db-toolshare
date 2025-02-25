@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { setCurrentUser } from '@/app/utils/session';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +18,21 @@ export default function LoginPage() {
     setIsLoggingIn(true);
 
     try {
+      // For demo purposes, we'll simulate a login by fetching a user with the entered username
+      const username = (document.getElementById('username') as HTMLInputElement).value;
+      
+      // Fetch user by username
+      const response = await fetch(`/api/users/by-username?username=${encodeURIComponent(username)}`);
+      
+      if (!response.ok) {
+        throw new Error('Login failed. Please check your credentials.');
+      }
+      
+      const user = await response.json();
+      
+      // Store user ID in session
+      setCurrentUser(user.id);
+      
       // Store role in localStorage
       localStorage.setItem("userRole", selectedRole);
       localStorage.setItem("isAuthenticated", "true");
@@ -38,6 +54,7 @@ export default function LoginPage() {
     } catch (error) {
       console.error("Login error:", error);
       setIsLoggingIn(false);
+      alert('Login failed. Please check your credentials.');
     }
   };
 
@@ -147,7 +164,7 @@ export default function LoginPage() {
                   name="username"
                   type="text"
                   required
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Enter your username"
                 />
               </div>
@@ -163,7 +180,7 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Enter your password"
                 />
               </div>
@@ -211,8 +228,13 @@ export default function LoginPage() {
           >
             Don't have an account?{" "}
             <Link
-              href="/signup"
+              href="/register"
+              prefetch={true}
               className="text-blue-600 hover:text-blue-500 font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                router.push('/register');
+              }}
             >
               Sign up now
             </Link>

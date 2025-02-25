@@ -9,6 +9,9 @@ const createOrderSchema = z.object({
   tool_id: z.number(),
   start_date: z.string().transform((str) => new Date(str)),
   end_date: z.string().transform((str) => new Date(str)),
+  status: z.enum(['pending', 'active', 'completed', 'cancelled']).optional().default('pending'),
+  delivery_type: z.enum(['pickup', 'delivery']).optional(),
+  delivery_address: z.string().optional().nullable(),
 });
 
 export async function GET() {
