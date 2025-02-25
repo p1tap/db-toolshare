@@ -1,5 +1,5 @@
 -- start 
--- psql -U postgres -d toolshare -c    
+psql -U postgres -d toolshare
 
 -- Admin Page GET Endpoints SQL Queries:
 
