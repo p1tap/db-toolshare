@@ -2,22 +2,57 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAuth } from "../contexts/AuthContext";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<"user" | "renter">("user");
-  const { setRole, setIsAuthenticated } = useAuth();
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [error, setError] = useState("");
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setRole(selectedRole);
-    setIsAuthenticated(true);
+    setError("");
 
-    if (selectedRole === "renter") {
-      window.location.href = "/renter/home";
-    } else {
-      window.location.href = "/home";
+    // Basic validation
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    try {
+      // Here you would typically make an API call to create the user account
+      // For now, we'll simulate a successful registration
+      localStorage.setItem("userRole", selectedRole);
+      localStorage.setItem("isAuthenticated", "true");
+
+      // Redirect based on role
+      if (selectedRole === "renter") {
+        router.push("/renter/home");
+      } else {
+        router.push("/home");
+      }
+    } catch (error) {
+      setError("Failed to create account. Please try again.");
     }
   };
 
@@ -124,6 +159,8 @@ export default function SignUpPage() {
                   name="username"
                   type="text"
                   required
+                  value={formData.username}
+                  onChange={handleInputChange}
                   className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Choose a username"
                 />
@@ -140,6 +177,8 @@ export default function SignUpPage() {
                   name="email"
                   type="email"
                   required
+                  value={formData.email}
+                  onChange={handleInputChange}
                   className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Enter your email"
                 />
@@ -156,6 +195,8 @@ export default function SignUpPage() {
                   name="password"
                   type="password"
                   required
+                  value={formData.password}
+                  onChange={handleInputChange}
                   className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Create a password"
                 />
@@ -172,11 +213,23 @@ export default function SignUpPage() {
                   name="confirmPassword"
                   type="password"
                   required
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
                   className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Confirm your password"
                 />
               </div>
             </div>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-red-500 text-sm mt-2"
+              >
+                {error}
+              </motion.div>
+            )}
 
             <div className="flex items-center mt-4">
               <input
