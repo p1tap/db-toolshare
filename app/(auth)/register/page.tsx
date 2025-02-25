@@ -257,6 +257,21 @@ export default function RegisterPage() {
               </button>
             </div>
           </form>
+
+          {/* Add renter registration link */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">Want to rent out your tools?</p>
+            <Link
+              href="/register/renter"
+              className="mt-2 inline-block text-blue-600 hover:text-blue-500 font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                router.push('/register/renter');
+              }}
+            >
+              Register as a Renter
+            </Link>
+          </div>
         </div>
       </div>
     </div>

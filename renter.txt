@@ -1,2 +1,8 @@
 Username: sarah_renter
 Password: password123
+
+Username: testrenter1
+Password: 123456
+
+Username: testrenter2
+Password: 123456

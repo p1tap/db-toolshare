@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRentalById, updateRental, cancelRental } from "@/db/utils";
 import { z } from "zod";
+import pool from "@/db/config";
 
 // Schema for rental updates
 const updateRentalSchema = z.object({
@@ -56,65 +57,45 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = validateRentalId(params);
-    const body = await request.json();
-
-    // Validate request body
-    const validatedData = updateRentalSchema.parse(body);
-
-    // Check if rental exists
-    const existingRental = await getRentalById(id);
-    if (!existingRental) {
-      return NextResponse.json({ error: "Rental not found" }, { status: 404 });
-    }
-
-    // Validate dates if provided
-    if (validatedData.start_date && validatedData.end_date) {
-      if (validatedData.end_date <= validatedData.start_date) {
-        return NextResponse.json(
-          { error: "End date must be after start date" },
-          { status: 400 }
-        );
-      }
-    } else if (validatedData.start_date && existingRental.end_date) {
-      if (existingRental.end_date <= validatedData.start_date) {
-        return NextResponse.json(
-          { error: "End date must be after start date" },
-          { status: 400 }
-        );
-      }
-    } else if (validatedData.end_date && existingRental.start_date) {
-      if (validatedData.end_date <= existingRental.start_date) {
-        return NextResponse.json(
-          { error: "End date must be after start date" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Update rental
-    const updatedRental = await updateRental(id, validatedData);
-    if (!updatedRental) {
+    const { id } = params;
+    const rentalId = parseInt(id);
+    
+    if (isNaN(rentalId)) {
       return NextResponse.json(
-        { error: "Failed to update rental" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(updatedRental);
-  } catch (error) {
-    if (error instanceof Error && error.message === "Invalid rental ID") {
-      return NextResponse.json({ error: "Invalid rental ID" }, { status: 400 });
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
+        { error: "Invalid rental ID" },
         { status: 400 }
       );
     }
 
-    console.error("Failed to update rental:", error);
+    const body = await request.json();
+    const { status } = body;
+
+    // Validate status
+    if (!["pending", "active", "completed", "cancelled"].includes(status)) {
+      return NextResponse.json(
+        { error: "Invalid status" },
+        { status: 400 }
+      );
+    }
+
+    // Update rental status
+    const result = await pool.query(`
+      UPDATE rentals
+      SET status = $1
+      WHERE id = $2
+      RETURNING *
+    `, [status, rentalId]);
+
+    if (result.rowCount === 0) {
+      return NextResponse.json(
+        { error: "Rental not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error updating rental:", error);
     return NextResponse.json(
       { error: "Failed to update rental" },
       { status: 500 }
