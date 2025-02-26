@@ -18,6 +18,7 @@ export interface CreateUserParams {
   username: string;
   email: string;
   password: string;
+  role?: string;
   address?: string;
   phone?: string;
   date_of_birth?: Date;
@@ -26,13 +27,16 @@ export interface CreateUserParams {
 
 // Create a new user
 export async function createUser(params: CreateUserParams): Promise<User> {
-  const { username, email, password, address, phone, date_of_birth, full_name } = params;
+  const { username, email, password, role, address, phone, date_of_birth, full_name } = params;
+
+  // Ensure role is one of the allowed values or default to 'user'
+  const validRole = role && ['user', 'renter', 'admin'].includes(role) ? role : 'user';
 
   const result = await pool.query(`
-    INSERT INTO users (username, email, password, status, address, phone, date_of_birth, full_name)
-    VALUES ($1, $2, $3, 'active', $4, $5, $6, $7)
+    INSERT INTO users (username, email, password, role, status, address, phone, date_of_birth, full_name)
+    VALUES ($1, $2, $3, $4, 'active', $5, $6, $7, $8)
     RETURNING *
-  `, [username, email, password, address || null, phone || null, date_of_birth || null, full_name || null]);
+  `, [username, email, password, validRole, address || null, phone || null, date_of_birth || null, full_name || null]);
 
   return result.rows[0] as User;
 }

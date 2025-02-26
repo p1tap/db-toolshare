@@ -6,7 +6,8 @@ SELECT id, username, email, password
 FROM users 
 WHERE role = 'admin';
 
-
+-- admin id : admin_jane
+-- admin password : admin123
 
 -- Admin Page GET Endpoints SQL Queries:
 
