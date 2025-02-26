@@ -1,6 +1,13 @@
 -- start 
 psql -U postgres -d toolshare
 
+-- Get admin user ID:
+SELECT id, username, email, password 
+FROM users 
+WHERE role = 'admin';
+
+
+
 -- Admin Page GET Endpoints SQL Queries:
 
 -- 1. GET /api/admin/dashboard (Admin Home Page - Get dashboard statistics)
