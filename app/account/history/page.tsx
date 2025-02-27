@@ -127,6 +127,45 @@ export default function AccountHistoryPage() {
     }
   };
 
+  const handleCancelOrder = async (orderId: number) => {
+    try {
+      // Confirm before cancelling
+      if (!confirm('Are you sure you want to cancel this order?')) {
+        return;
+      }
+      
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel order');
+      }
+
+      // Update the local state to reflect the change
+      setHistory(prevHistory => 
+        prevHistory.map(item => {
+          if (item.order_id === orderId && item.order_details) {
+            return {
+              ...item,
+              order_details: {
+                ...item.order_details,
+                status: 'cancelled'
+              }
+            };
+          }
+          return item;
+        })
+      );
+    } catch (err) {
+      console.error('Error cancelling order:', err);
+      setError('Failed to cancel order. Please try again.');
+    }
+  };
+
   const handleExtendDate = async (orderId: number) => {
     try {
       const days = extendDays[orderId] || 1;
@@ -303,6 +342,17 @@ export default function AccountHistoryPage() {
                             </div>
                           )}
                         </div>
+                      )}
+                      
+                      {/* Cancel Order Button */}
+                      {item.order_details?.status && 
+                       ['pending'].includes(item.order_details.status.toLowerCase()) && (
+                        <button
+                          onClick={() => handleCancelOrder(item.order_id)}
+                          className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
+                        >
+                          Cancel Order
+                        </button>
                       )}
                     </div>
 

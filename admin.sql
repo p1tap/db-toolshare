@@ -54,7 +54,7 @@ SELECT
   t.description,
   t.status,
   t.created_at
-FROM tools t
+FROM tools t  
 JOIN users u ON t.owner_id = u.id
 WHERE t.status = 'pending'
 ORDER BY t.created_at DESC;
