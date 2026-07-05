@@ -1,7 +1,7 @@
 // This is a simple test script to directly test user creation with a role
-// Run with: node -r @babel/register test-user-creation.js
+// Run with: node -r @babel/register scripts/test-user-creation.js
 
-import { createUser } from './db/utils';
+import { createUser } from "../db/queries/users";
 
 async function testUserCreation() {
   try {
