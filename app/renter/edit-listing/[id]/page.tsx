@@ -30,8 +30,7 @@ export default function EditListingPage({
     const fetchTool = async () => {
       try {
         const response = await fetch(`/api/tools/${resolvedParams.id}`, {
-          cache: 'no-store',
-          next: { revalidate: 0 }
+          cache: 'no-store'
         });
         if (!response.ok) {
           throw new Error('Failed to fetch tool details');

@@ -51,7 +51,7 @@ export default function SignUpPage() {
       } else {
         router.push("/home");
       }
-    } catch (error) {
+    } catch {
       setError("Failed to create account. Please try again.");
     }
   };

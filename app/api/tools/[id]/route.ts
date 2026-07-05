@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToolById, updateTool, deleteTool } from "@/db/utils";
+import { getToolById, updateTool, deleteTool } from "@/db/queries/tools";
 import { getMockToolById } from "@/app/data/mockTools";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 // Helper function to validate and parse tool ID
 function validateToolId(id: string | string[]) {
@@ -17,7 +17,7 @@ function validateToolId(id: string | string[]) {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;

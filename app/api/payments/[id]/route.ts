@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getPaymentById, updatePayment } from "@/db/utils";
+import { NextResponse } from "next/server";
+import { getPaymentById, updatePayment } from "@/db/queries/payments";
 import { z } from "zod";
 
 // Schema for payment update
@@ -19,7 +19,7 @@ function validateId(id: string): number {
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
@@ -42,7 +42,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;

@@ -5,9 +5,9 @@ import { notFound } from "next/navigation";
 import { mockTools, Tool } from "@/app/data/mockTools";
 
 interface ToolDetailsProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // Server-side function to fetch tool data
@@ -15,8 +15,7 @@ async function getToolData(id: string): Promise<{ tool: Tool | null, isMockData:
   try {
     // First try to get the tool from the database via API
     const res = await fetch(`http://localhost:3000/api/tools/${id}`, {
-      cache: 'no-store',
-      next: { tags: [`tool-${id}`] }
+      cache: 'no-store'
     });
     
     if (res.ok) {

@@ -1,10 +1,10 @@
-import { getTools } from "@/db/utils";
+import { getTools } from "@/db/queries/tools";
 import CategoryNav from "../components/CategoryNav";
 import ToolCard from "../components/ToolCard";
-import { Tool } from "@/db/utils";
+import { Tool } from "@/db/queries/tools";
 
 // Move categories to a shared constant
-export const categories = [
+const categories = [
   {
     name: "Hand Tools",
     items: ["Hammer", "Screwdriver", "Wrench", "Pliers", "Chisel"],

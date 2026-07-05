@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Payment } from '@/db/utils';
+import { Payment } from "@/db/queries/payments";
 
 interface PaymentsListProps {
   initialPayments?: Payment[];
@@ -64,6 +64,8 @@ export default function PaymentsList({ initialPayments, rentalId }: PaymentsList
     const bValue = b[sortField];
     
     if (aValue === bValue) return 0;
+    if (aValue === undefined) return 1;
+    if (bValue === undefined) return -1;
     
     const comparison = aValue < bValue ? -1 : 1;
     return sortDirection === 'asc' ? comparison : -comparison;

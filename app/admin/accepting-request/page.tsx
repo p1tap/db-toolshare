@@ -7,7 +7,7 @@ interface SupportRequest {
   id: number;
   type: string;
   message: string;
-  status: "pending" | "finished";
+  status: "pending" | "finished" | "rejected";
   created_at: string;
   name: string;
   email: string;

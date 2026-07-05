@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getHistoryById } from "@/db/utils";
+import { NextResponse } from "next/server";
+import { getHistoryById } from "@/db/queries/history";
 
 // Helper function to validate and parse history ID
 function validateId(id: string): number {
@@ -12,7 +12,7 @@ function validateId(id: string): number {
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;

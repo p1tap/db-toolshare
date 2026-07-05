@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createUser, getUserByEmail } from "@/db/utils";
+import { createUser, getUserByEmail } from "@/db/queries/users";
 
 export async function POST(request: Request) {
   try {
@@ -36,7 +36,8 @@ export async function POST(request: Request) {
     });
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = newUser;
+    const { password: removedPassword, ...userWithoutPassword } = newUser;
+    void removedPassword;
 
     return NextResponse.json(userWithoutPassword, { status: 201 });
   } catch (error) {

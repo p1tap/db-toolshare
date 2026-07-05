@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getRentalsByUserId, getToolsByOwnerId } from "@/db/utils";
 import pool from "@/db/config";
 
 export async function GET(request: Request) {

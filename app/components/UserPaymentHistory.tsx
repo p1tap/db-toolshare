@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Payment } from '@/db/utils';
+import { Payment } from "@/db/queries/payments";
 
 interface UserPaymentHistoryProps {
   userId: number;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRentalsByUserId } from "@/db/utils";
+import { getRentalsByUserId } from "@/db/queries/rentals";
 
 // Helper function to validate and parse user ID
 function validateUserId(params: { userId: string }): number {
@@ -12,10 +12,10 @@ function validateUserId(params: { userId: string }): number {
 
 export async function GET(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const userId = validateUserId(params);
+    const userId = validateUserId(await params);
     const rentals = await getRentalsByUserId(userId);
     return NextResponse.json(rentals);
   } catch (error) {

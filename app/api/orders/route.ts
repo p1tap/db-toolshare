@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createOrder, getOrdersWithDetails } from "@/db/utils";
-import { getToolById } from "@/db/utils";
+import { NextResponse } from "next/server";
+import { createOrder, getOrdersWithDetails } from "@/db/queries/orders";
+import { getToolById } from "@/db/queries/tools";
 import { z } from "zod";
 
 // Schema for order creation

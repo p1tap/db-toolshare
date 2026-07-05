@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserById, updateUser } from '@/db/utils';
+import { getUserById, updateUser, User } from "@/db/queries/users";
 import { z } from 'zod';
 
 // Validation schema for user update
@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Don't return the password
-    const { password, ...userWithoutPassword } = user;
+    const { password: removedPassword, ...userWithoutPassword } = user;
+    void removedPassword;
     
     return NextResponse.json(userWithoutPassword);
   } catch (error) {

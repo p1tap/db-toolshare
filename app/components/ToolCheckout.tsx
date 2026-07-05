@@ -76,7 +76,7 @@ export default function ToolCheckout({
         throw new Error('Failed to create order');
       }
 
-      const order = await orderResponse.json();
+      await orderResponse.json();
 
       // Create a rental for this order
       const rentalResponse = await fetch('/api/rentals', {

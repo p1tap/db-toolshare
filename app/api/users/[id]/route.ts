@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserById, updateUser, deleteUser } from "@/db/utils";
+import { getUserById, updateUser, deleteUser } from "@/db/queries/users";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 // Helper function to validate and parse user ID
 function validateUserId(id: string | string[]) {
@@ -32,7 +32,8 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 
     // Remove password from response
-    const { password: _pass, ...userWithoutPassword } = user;
+    const { password: removedPassword, ...userWithoutPassword } = user;
+    void removedPassword;
     return NextResponse.json(userWithoutPassword);
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -74,7 +75,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
 
     // Remove password from response
-    const { password: _pass, ...userWithoutPassword } = updatedUser;
+    const { password: removedPassword, ...userWithoutPassword } = updatedUser;
+    void removedPassword;
     return NextResponse.json(userWithoutPassword);
   } catch (error) {
     console.error("Error updating user:", error);

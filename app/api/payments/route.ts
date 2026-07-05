@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPaymentsWithDetails, createPayment } from "@/db/utils";
+import { getPaymentsWithDetails, createPayment } from "@/db/queries/payments";
 import { z } from "zod";
 
 // Schema for payment creation

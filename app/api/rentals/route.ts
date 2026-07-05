@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createRental, getRentalsWithDetails } from "@/db/utils";
-import { getToolById } from "@/db/utils";
+import { createRental, getRentalsWithDetails } from "@/db/queries/rentals";
+import { getToolById } from "@/db/queries/tools";
 import { z } from "zod";
 
 // Schema for rental creation

@@ -1,11 +1,17 @@
-import { createPayment } from "@/db/utils";
+import { createPayment, Payment } from "@/db/queries/payments";
+
+interface PaymentResult {
+  success: boolean;
+  payment?: Payment;
+  error?: string;
+}
 
 /**
  * Creates a successful payment for a rental
  * This is a simplified mock implementation that automatically creates a successful payment
  * In a real application, this would integrate with a payment gateway
  */
-export async function processPayment(rentalId: number, amount: number): Promise<any> {
+export async function processPayment(rentalId: number, amount: number): Promise<PaymentResult> {
   try {
     // Generate a mock transaction ID
     const transactionId = `txn_${Date.now()}_${Math.floor(Math.random() * 1000)}`;

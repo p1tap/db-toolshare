@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getOrderById, updateOrder, cancelOrder } from "@/db/utils";
+import { NextResponse } from "next/server";
+import { getOrderById, updateOrder, cancelOrder } from "@/db/queries/orders";
 import { z } from "zod";
 
 // Schema for order update
@@ -20,7 +20,7 @@ function validateId(id: string): number {
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Await params before accessing its properties
@@ -44,7 +44,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Await params before accessing its properties
@@ -97,7 +97,7 @@ export async function PUT(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Await params before accessing its properties

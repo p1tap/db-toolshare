@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser, getUserByEmail, getUserByUsername } from '@/db/utils';
+import { createUser, getUserByEmail, getUserByUsername } from "@/db/queries/users";
 import { z } from 'zod';
 
 // Validation schema for registration
@@ -57,7 +57,8 @@ export async function POST(request: NextRequest) {
     console.log('Created user:', user); // Log the created user
 
     // Return success without password
-    const { password, ...userWithoutPassword } = user;
+    const { password: removedPassword, ...userWithoutPassword } = user;
+    void removedPassword;
     return NextResponse.json(userWithoutPassword, { status: 201 });
   } catch (error) {
     console.error('Registration error:', error);

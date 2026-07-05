@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getToolsByOwnerId } from "@/db/utils";
+import { getToolsByOwnerId } from "@/db/queries/tools";
 
 export async function GET(request: Request) {
   try {

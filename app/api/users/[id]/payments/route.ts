@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getRentalsByUserId, getPaymentsByRentalId } from "@/db/utils";
+import { NextResponse } from "next/server";
+import { getRentalsByUserId } from "@/db/queries/rentals";
+import { getPaymentsByRentalId } from "@/db/queries/payments";
 
 // Helper function to validate and parse user ID
 function validateId(id: string): number {
@@ -12,10 +13,10 @@ function validateId(id: string): number {
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const parsedUserId = validateId(id);
     
     // Get all rentals for this user

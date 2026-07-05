@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRentalsByToolId } from "@/db/utils";
+import { getRentalsByToolId } from "@/db/queries/rentals";
 
 // Helper function to validate and parse tool ID
 function validateToolId(params: { toolId: string }): number {
@@ -12,10 +12,10 @@ function validateToolId(params: { toolId: string }): number {
 
 export async function GET(
   request: Request,
-  { params }: { params: { toolId: string } }
+  { params }: { params: Promise<{ toolId: string }> }
 ) {
   try {
-    const toolId = validateToolId(params);
+    const toolId = validateToolId(await params);
     const rentals = await getRentalsByToolId(toolId);
     return NextResponse.json(rentals);
   } catch (error) {

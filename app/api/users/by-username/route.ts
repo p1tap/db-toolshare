@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByUsername } from '@/db/utils';
+import { getUserByUsername } from "@/db/queries/users";
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Don't return the password
-    const { password, ...userWithoutPassword } = user;
+    const { password: removedPassword, ...userWithoutPassword } = user;
+    void removedPassword;
     
     return NextResponse.json(userWithoutPassword);
   } catch (error) {

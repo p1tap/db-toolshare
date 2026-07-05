@@ -1,14 +1,14 @@
-import { getOrderById } from "@/db/utils";
+import { getOrderById } from "@/db/queries/orders";
 import Link from "next/link";
 
 interface OrderConfirmationProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function OrderConfirmation({ params }: OrderConfirmationProps) {
-  const { id } = params;
+  const { id } = await params;
   const order = await getOrderById(parseInt(id));
 
   if (!order) {

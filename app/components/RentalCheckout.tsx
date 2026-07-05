@@ -94,7 +94,7 @@ export default function RentalCheckout({
       <div className="border-t border-gray-200 pt-4 mb-4">
         <p className="text-sm text-gray-500 mb-4">
           This is a demo checkout. In a real application, you would enter your payment details here.
-          For this demo, clicking "Complete Payment" will automatically create a successful payment.
+          For this demo, clicking &quot;Complete Payment&quot; will automatically create a successful payment.
         </p>
       </div>
       

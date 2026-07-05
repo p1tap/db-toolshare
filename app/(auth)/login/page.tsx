@@ -213,9 +213,10 @@ export default function LoginPage() {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               type="submit"
+              disabled={isLoggingIn}
               className="relative w-full mt-6 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
             >
-              Sign in
+              {isLoggingIn ? "Signing in..." : "Sign in"}
             </motion.button>
           </motion.form>
 
@@ -226,7 +227,7 @@ export default function LoginPage() {
             transition={{ delay: 0.8 }}
             className="text-center text-sm text-gray-600 mt-6"
           >
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/register"
               prefetch={true}

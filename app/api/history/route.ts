@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getHistoryWithDetails, createHistory } from "@/db/utils";
+import { getHistoryWithDetails, createHistory } from "@/db/queries/history";
 import { z } from "zod";
 
 // Schema for history creation

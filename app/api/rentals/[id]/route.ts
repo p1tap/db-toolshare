@@ -1,34 +1,10 @@
 import { NextResponse } from "next/server";
-import { getRentalById, updateRental, cancelRental } from "@/db/utils";
-import { z } from "zod";
+import { getRentalById, cancelRental } from "@/db/queries/rentals";
 import pool from "@/db/config";
-
-// Schema for rental updates
-const updateRentalSchema = z.object({
-  start_date: z
-    .string()
-    .transform((str) => new Date(str))
-    .optional(),
-  end_date: z
-    .string()
-    .transform((str) => new Date(str))
-    .optional(),
-  status: z.enum(["pending", "active", "completed", "cancelled"]).optional(),
-  total_price: z.number().positive().optional(),
-});
-
-// Helper function to validate and parse rental ID
-function validateRentalId(params: { id: string }): number {
-  const id = parseInt(params.id);
-  if (isNaN(id)) {
-    throw new Error("Invalid rental ID");
-  }
-  return id;
-}
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
@@ -54,7 +30,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
@@ -138,7 +114,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;

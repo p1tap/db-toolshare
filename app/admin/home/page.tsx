@@ -123,7 +123,7 @@ export default function AdminDashboard() {
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Categories</h3>
           <div className="space-y-4">
-            {stats.topCategories.map((category, index) => (
+            {stats.topCategories.map((category) => (
               <div key={category.name} className="flex items-center">
                 <div className="flex-1">
                   <div className="flex justify-between mb-1">
