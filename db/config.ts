@@ -1,9 +1,12 @@
 import { Pool } from "pg";
 
-// Create pool with explicit config and fallback to env vars
+if (!process.env.POSTGRES_PASSWORD) {
+  throw new Error("POSTGRES_PASSWORD environment variable is required");
+}
+
 const pool = new Pool({
   user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD || 'peepztapz92',
+  password: process.env.POSTGRES_PASSWORD,
   host: process.env.POSTGRES_HOST || 'localhost',
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
   database: process.env.POSTGRES_DB || 'toolshare'

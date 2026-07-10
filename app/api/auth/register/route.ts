@@ -17,11 +17,8 @@ const registerSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('Registration request body:', body); // Log the request body
-    
     const validatedData = registerSchema.parse(body);
-    console.log('Validated data:', validatedData); // Log the validated data
-    
+
     // Check if email exists
     const existingEmail = await getUserByEmail(validatedData.email);
     if (existingEmail) {
@@ -40,9 +37,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user
-    console.log('Creating user with role:', validatedData.role); // Log the role before creating user
-    
     const user = await createUser({
       username: validatedData.username,
       email: validatedData.email,
@@ -53,8 +47,6 @@ export async function POST(request: NextRequest) {
       date_of_birth: validatedData.dateOfBirth ? new Date(validatedData.dateOfBirth) : undefined,
       full_name: validatedData.fullName,
     });
-    
-    console.log('Created user:', user); // Log the created user
 
     // Return success without password
     const { password: removedPassword, ...userWithoutPassword } = user;

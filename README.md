@@ -181,10 +181,17 @@ Start your server and open the app in your browser. The root page redirects to `
 | `/admin/accepting-request` | Support request management |
 | `/support` | Customer support form |
 
+## Scope & Known Limitations
+
+This was built as a database-design course project — the scope was relational modeling, query design, and API coverage, **not** production security. Known limitations, documented rather than half-fixed:
+
+- **Authentication is demo-grade**: login is a username lookup plus client-side role selection persisted to `localStorage`. There is no session/token verification, no password hashing, and no server-side authorization on routes. Do not deploy this as-is.
+- Payment processing is mocked and records successful payment data without a real payment gateway.
+
+**The production-hardened successor is [toolshare-aws](https://github.com/p1tap/toolshare-aws)** — a serverless re-platform of this app onto AWS (API Gateway + Lambda + DynamoDB) with real identity (Cognito, JWT-authorized routes), least-privilege IAM per function, and a CI/CD pipeline with staged deploys, an automated smoke gate, and canary releases with automatic rollback.
+
 ## Implementation Notes
 
-- Authentication is a demo flow using `localStorage` and username lookup, not production-grade session security.
-- Payment processing is mocked and records successful payment data without a real payment gateway.
 - Tool deletion and user deletion are handled as soft status changes.
 - Several SQL files are included for schema setup, testing, analytics, and operation demos.
 - The project uses fallback mock tool data for tool detail pages if database lookup fails.

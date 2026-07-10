@@ -55,15 +55,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  console.log('Received update request');
-  
   try {
     const body = await req.json();
-    console.log('Request body:', body);
-    
     const validatedData = schema.parse(body);
-    console.log('Validated data:', validatedData);
-    
+
     // Format data for update
     const updateData: Partial<User> = {};
     
@@ -73,18 +68,19 @@ export async function PUT(req: NextRequest) {
     if (validatedData.phone) updateData.phone = validatedData.phone;
     if (validatedData.date_of_birth) updateData.date_of_birth = new Date(validatedData.date_of_birth);
     if (validatedData.fullName) updateData.full_name = validatedData.fullName;
-    
-    console.log('Update data:', updateData);
-    
+
     // Update user in database
     const updatedUser = await updateUser(Number(validatedData.userId), updateData);
-    console.log('Updated user:', updatedUser);
-    
+
     if (!updatedUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    
-    return NextResponse.json({ user: updatedUser });
+
+    // Don't return the password
+    const { password: removedPassword, ...userWithoutPassword } = updatedUser;
+    void removedPassword;
+
+    return NextResponse.json({ user: userWithoutPassword });
   } catch (error) {
     console.error('Error updating user:', error);
     
